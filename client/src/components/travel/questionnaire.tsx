@@ -524,19 +524,20 @@ export default function Questionnaire() {
                                 <div
                                   key={destination.id}
                                   className={`flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 ${
-                                    field.value.includes(String(destination.id))
+                                    field.value.includes(destination.id.toString())
                                       ? 'bg-primary/5'
                                       : ''
                                   }`}
                                   onClick={() => {
                                     const currentDestinations = field.value;
-                                    if (currentDestinations.includes(String(destination.id))) {
+                                    const destId = destination.id.toString();
+                                    if (currentDestinations.includes(destId)) {
                                       form.setValue(
                                         'destinations',
-                                        currentDestinations.filter(id => id !== String(destination.id))
+                                        currentDestinations.filter(id => id !== destId)
                                       );
                                     } else {
-                                      form.setValue('destinations', [...currentDestinations, String(destination.id)]);
+                                      form.setValue('destinations', [...currentDestinations, destId]);
                                     }
                                   }}
                                 >
@@ -546,7 +547,7 @@ export default function Questionnaire() {
                                       <p className="text-xs text-muted-foreground mt-1">{destination.description}</p>
                                     )}
                                   </div>
-                                  {field.value.includes(String(destination.id)) && (
+                                  {field.value.includes(destination.id.toString()) && (
                                     <Check className="h-4 w-4 text-primary" />
                                   )}
                                 </div>
@@ -571,16 +572,17 @@ export default function Questionnaire() {
                               <DestinationCard
                                 key={destination.id}
                                 destination={destination}
-                                selected={field.value.includes(String(destination.id))}
+                                selected={field.value.includes(destination.id.toString())}
                                 onSelect={() => {
                                   const currentDestinations = field.value;
-                                  if (currentDestinations.includes(String(destination.id))) {
+                                  const destId = destination.id.toString();
+                                  if (currentDestinations.includes(destId)) {
                                     form.setValue(
                                       'destinations',
-                                      currentDestinations.filter(id => id !== String(destination.id))
+                                      currentDestinations.filter(id => id !== destId)
                                     );
                                   } else {
-                                    form.setValue('destinations', [...currentDestinations, String(destination.id)]);
+                                    form.setValue('destinations', [...currentDestinations, destId]);
                                   }
                                 }}
                               />
