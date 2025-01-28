@@ -41,7 +41,7 @@ export default function Questionnaire() {
 
   const destinationsQuery = useQuery({
     queryKey: ["/api/destinations/search", searchQuery],
-    enabled: !!searchQuery,
+    enabled: !!searchQuery && searchQuery.length > 2,
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -116,7 +116,6 @@ export default function Questionnaire() {
     return null;
   };
 
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -140,32 +139,34 @@ export default function Questionnaire() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Start Date</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                disabled={hasSelectedSeason}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {field.value ? format(field.value, "PPP") : "Select start date"}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={(date) => {
-                                  field.onChange(date);
-                                  if (date) {
-                                    setEndDateOpen(true);
+                          <FormControl>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  disabled={hasSelectedSeason}
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {field.value ? format(field.value, "PPP") : "Select start date"}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={(date) => {
+                                    field.onChange(date);
+                                    if (date) {
+                                      setEndDateOpen(true);
+                                    }
+                                  }}
+                                  disabled={(date) =>
+                                    date < new Date() || date > new Date(2025, 11, 31)
                                   }
-                                }}
-                                disabled={(date) =>
-                                  date < new Date() || date > new Date(2025, 11, 31)
-                                }
-                              />
-                            </PopoverContent>
-                          </Popover>
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          </FormControl>
                         </FormItem>
                       )}
                     />
@@ -176,38 +177,40 @@ export default function Questionnaire() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>End Date</FormLabel>
-                          <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                disabled={hasSelectedSeason}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {field.value ? format(field.value, "PPP") : "Select end date"}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={(date) => {
-                                  field.onChange(date);
-                                  setEndDateOpen(false);
-                                }}
-                                disabled={(date) =>
-                                  date < (form.watch("startDate") || new Date()) ||
-                                  date > new Date(2025, 11, 31)
-                                }
-                              />
-                            </PopoverContent>
-                          </Popover>
+                          <FormControl>
+                            <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  disabled={hasSelectedSeason}
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {field.value ? format(field.value, "PPP") : "Select end date"}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={(date) => {
+                                    field.onChange(date);
+                                    setEndDateOpen(false);
+                                  }}
+                                  disabled={(date) =>
+                                    date < (form.watch("startDate") || new Date()) ||
+                                    date > new Date(2025, 11, 31)
+                                  }
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          </FormControl>
                         </FormItem>
                       )}
                     />
                   </div>
-                  {hasSelectedDates && (
+                  {hasSelectedDates && form.watch("startDate") && form.watch("endDate") && (
                     <p className="text-sm text-muted-foreground mt-2">
-                      Duration: {differenceInDays(form.watch("endDate"), form.watch("startDate")) + 1} days
+                      Duration: {differenceInDays(form.watch("endDate")!, form.watch("startDate")!) + 1} days
                     </p>
                   )}
                 </div>
@@ -260,6 +263,7 @@ export default function Questionnaire() {
             </CardContent>
           </Card>
         )}
+
         {step === 2 && (
           <Card>
             <CardContent className="pt-6">
@@ -273,15 +277,17 @@ export default function Questionnaire() {
                     <FormItem>
                       <FormLabel>Search for destinations</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Type to search destinations..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="mb-4"
-                        />
+                        <div>
+                          <Input
+                            placeholder="Type to search destinations..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="mb-4"
+                          />
+                        </div>
                         {destinationsQuery.data && (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {destinationsQuery.data.map((destination) => (
+                            {destinationsQuery.data.map((destination: any) => (
                               <DestinationCard
                                 key={destination.id}
                                 destination={{
@@ -319,7 +325,6 @@ export default function Questionnaire() {
                   Curated recommendations based on your selected time period
                 </p>
               </div>
-
             </CardContent>
           </Card>
         )}
