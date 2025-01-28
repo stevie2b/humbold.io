@@ -39,13 +39,21 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ message: "Season parameter is required" });
       }
 
-      // Use raw SQL for the order by clause since we need to access a JSON field
+      // Use DISTINCT ON to ensure we get unique destinations
       const results = await db.query.destinations.findMany({
-        orderBy: sql`seasonal_ratings->>'${sql.raw(season)}' DESC`,
+        orderBy: [
+          sql`seasonal_ratings->>'${sql.raw(season)}' DESC`,
+          sql`name ASC`
+        ],
         limit: 4,
       });
 
-      res.json(results);
+      // Ensure unique destinations by name
+      const uniqueResults = Array.from(
+        new Map(results.map(item => [item.name, item])).values()
+      );
+
+      res.json(uniqueResults.slice(0, 4));
     } catch (error) {
       console.error("Failed to get recommended destinations:", error);
       res.status(500).json({ message: "Failed to get recommended destinations" });
