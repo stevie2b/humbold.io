@@ -1,14 +1,53 @@
 import { db } from "@db";
 import { destinations, type InsertDestination } from "@db/schema";
-import { eq, like } from "drizzle-orm";
+import { eq, or, ilike } from "drizzle-orm";
+import { MAJOR_CITIES } from "./cities-data";
 
-const OPENTRIPMAP_API_KEY = process.env.OPENTRIPMAP_API_KEY;
-const BASE_URL = "https://api.opentripmap.com/0.1";
+let citiesInitialized = false;
 
-// Default coordinates for a central point (roughly center of world map)
-const DEFAULT_LAT = 0;
-const DEFAULT_LON = 0;
-const DEFAULT_RADIUS = 20000000; // 20000km in meters, basically worldwide
+async function initializeCities() {
+  if (citiesInitialized) return;
+
+  try {
+    // Check if we already have cities in the database
+    const existingCities = await db.query.destinations.findMany({
+      limit: 1
+    });
+
+    if (existingCities.length === 0) {
+      console.log("Initializing cities database...");
+      await db.insert(destinations).values(MAJOR_CITIES);
+    }
+
+    citiesInitialized = true;
+  } catch (error) {
+    console.error("Failed to initialize cities:", error);
+  }
+}
+
+export async function searchDestinations(query: string) {
+  try {
+    await initializeCities();
+
+    // Search with case-insensitive partial matches on city name or country name
+    const results = await db.query.destinations.findMany({
+      where: (destinations, { or, ilike }) => or(
+        ilike(destinations.cityName, `%${query}%`),
+        ilike(destinations.countryName, `%${query}%`)
+      ),
+      columns: {
+        id: true,
+        name: true,
+      },
+      limit: 10,
+    });
+
+    return results;
+  } catch (error) {
+    console.error("Error searching destinations:", error);
+    throw error;
+  }
+}
 
 interface OpenTripMapPlace {
   xid: string;
@@ -37,116 +76,6 @@ interface OpenTripMapPlaceDetails {
   preview?: {
     source: string;
   };
-}
-
-export async function searchDestinations(query: string) {
-  try {
-    console.log("Searching for destinations with query:", query);
-
-    // First check our database
-    const cachedResults = await db.query.destinations.findMany({
-      where: (destinations, { like }) =>
-        like(destinations.name, `%${query}%`),
-      columns: {
-        id: true,
-        name: true,
-      },
-      limit: 10,
-    });
-
-    if (cachedResults.length > 0) {
-      console.log("Found cached results:", cachedResults.length);
-      return cachedResults;
-    }
-
-    if (!OPENTRIPMAP_API_KEY) {
-      throw new Error("OpenTripMap API key is not configured");
-    }
-
-    // If not in database, fetch from OpenTripMap
-    const searchUrl = `${BASE_URL}/en/places/radius?radius=${DEFAULT_RADIUS}&lon=${DEFAULT_LON}&lat=${DEFAULT_LAT}&name=${encodeURIComponent(query)}&format=json&apikey=${OPENTRIPMAP_API_KEY}`;
-
-    const response = await fetch(searchUrl);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("OpenTripMap API error:", response.status, errorText);
-      throw new Error(`Failed to search destinations: ${errorText}`);
-    }
-
-    const places: OpenTripMapPlace[] = await response.json();
-    console.log("Found places:", places.length);
-
-    if (places.length === 0) {
-      return [];
-    }
-
-    // Take only top 5 results to avoid too many API calls
-    const topPlaces = places.slice(0, 5);
-
-    // Fetch details for each place
-    const detailedPlaces = await Promise.allSettled(
-      topPlaces.map(async (place) => {
-        const detailsUrl = `${BASE_URL}/en/places/xid/${place.xid}?apikey=${OPENTRIPMAP_API_KEY}`;
-        const response = await fetch(detailsUrl);
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch details for ${place.name}`);
-        }
-
-        return response.json();
-      })
-    );
-
-    // Filter successful results and transform to our schema
-    const validPlaces = detailedPlaces
-      .filter((result): result is PromiseFulfilledResult<OpenTripMapPlaceDetails> =>
-        result.status === "fulfilled"
-      )
-      .map(result => result.value)
-      .filter(place => place.point && typeof place.point.lat === 'number' && typeof place.point.lon === 'number');
-
-    if (validPlaces.length === 0) {
-      return [];
-    }
-
-    // Transform to our database schema
-    const destinationsToInsert = validPlaces.map((place) => {
-      const seasonalRatings = {
-        spring: calculateSeasonalRating(place),
-        summer: calculateSeasonalRating(place),
-        autumn: calculateSeasonalRating(place),
-        winter: calculateSeasonalRating(place),
-      };
-
-      return {
-        name: place.name,
-        countryCode: place.address.country_code,
-        description: place.wikipedia_extracts?.text || null,
-        latitude: place.point.lat,
-        longitude: place.point.lon,
-        imageUrl: place.preview?.source || null,
-        seasonalRatings,
-      } satisfies Omit<InsertDestination, 'id' | 'createdAt' | 'updatedAt'>;
-    });
-
-    // Insert into database
-    if (destinationsToInsert.length > 0) {
-      console.log("Inserting new destinations:", destinationsToInsert.length);
-      await db.insert(destinations).values(destinationsToInsert);
-
-      // Return just the basic info needed for the list
-      return destinationsToInsert.map(dest => ({
-        id: dest.name, // Using name as id since we don't have the inserted ids
-        name: dest.name,
-      }));
-    }
-
-    return destinationsToInsert;
-  } catch (error) {
-    console.error("Error searching destinations:", error);
-    throw error;
-  }
 }
 
 function calculateSeasonalRating(place: OpenTripMapPlaceDetails): number {

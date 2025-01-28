@@ -13,6 +13,8 @@ export const travelPlans = pgTable("travel_plans", {
 export const destinations = pgTable("destinations", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  cityName: text("city_name").notNull(),
+  countryName: text("country_name").notNull(),
   countryCode: varchar("country_code", { length: 2 }).notNull(),
   description: text("description"),
   latitude: decimal("latitude", { precision: 10, scale: 7 }),
