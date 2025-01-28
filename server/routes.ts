@@ -22,7 +22,7 @@ export function registerRoutes(app: Express): Server {
         ...otherPreferences
       });
       res.json(plan);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to generate travel plan:", error);
       res.status(500).json({ 
         message: "Failed to generate travel plan", 
@@ -65,13 +65,32 @@ export function registerRoutes(app: Express): Server {
         if (results.length === 0) {
           // Fallback to default recommendations if no database results
           const defaultRecommendations = MAJOR_CITIES
-            .sort((a, b) => b.seasonalRatings[season] - a.seasonalRatings[season])
+            .map((city, index) => ({
+              ...city,
+              id: index + 1, // Ensure each city has a unique ID
+              seasonalRatings: city.seasonalRatings || {
+                spring: 0,
+                summer: 0,
+                autumn: 0,
+                winter: 0
+              }
+            }))
+            .sort((a, b) => (b.seasonalRatings[season] || 0) - (a.seasonalRatings[season] || 0))
             .slice(0, 4);
           return res.json(defaultRecommendations);
         }
 
         const uniqueResults = Array.from(
-          new Map(results.map(item => [item.name, item])).values()
+          new Map(results.map(item => [item.name, {
+            ...item,
+            id: item.id || Math.floor(Math.random() * 1000000),
+            seasonalRatings: item.seasonalRatings || {
+              spring: 0,
+              summer: 0,
+              autumn: 0,
+              winter: 0
+            }
+          }])).values()
         ).slice(0, 4);
 
         res.json(uniqueResults);
@@ -79,7 +98,17 @@ export function registerRoutes(app: Express): Server {
         console.error("Database error, using fallback recommendations:", dbError);
         // Fallback to hardcoded recommendations
         const fallbackRecommendations = MAJOR_CITIES
-          .sort((a, b) => b.seasonalRatings[season] - a.seasonalRatings[season])
+          .map((city, index) => ({
+            ...city,
+            id: index + 1, // Ensure each city has a unique ID
+            seasonalRatings: city.seasonalRatings || {
+              spring: 0,
+              summer: 0,
+              autumn: 0,
+              winter: 0
+            }
+          }))
+          .sort((a, b) => (b.seasonalRatings[season] || 0) - (a.seasonalRatings[season] || 0))
           .slice(0, 4);
         res.json(fallbackRecommendations);
       }
