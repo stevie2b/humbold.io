@@ -88,7 +88,15 @@ export default function Questionnaire() {
           <Card>
             <CardContent className="pt-6">
               <div className="space-y-6">
-                <div className={`space-y-4 ${hasSelectedSeason ? "opacity-50" : ""}`}>
+                <div 
+                  className={`space-y-4 ${hasSelectedSeason ? "opacity-50" : ""}`}
+                  onClick={() => {
+                    if (hasSelectedSeason) {
+                      // Clear season when clicking on dates section
+                      form.setValue("season", undefined);
+                    }
+                  }}
+                >
                   <h3 className="text-lg font-semibold">Select Travel Dates</h3>
                   <div className="flex flex-col md:flex-row gap-4">
                     <FormField
