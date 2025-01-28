@@ -1,6 +1,6 @@
 import { db } from "@db";
 import { destinations, type InsertDestination } from "@db/schema";
-import { eq, or, ilike } from "drizzle-orm";
+import { eq, or, ilike, sql } from "drizzle-orm";
 import { MAJOR_CITIES } from "./cities-data";
 
 let citiesInitialized = false;
@@ -67,6 +67,18 @@ export async function searchDestinations(query: string) {
         description: true,
         seasonalRatings: true,
       },
+      orderBy: [
+        // Order by exact matches first, then partial matches
+        sql`
+          CASE 
+            WHEN name ILIKE ${query} THEN 1
+            WHEN city_name ILIKE ${query} THEN 2
+            WHEN country_name ILIKE ${query} THEN 3
+            ELSE 4
+          END
+        `,
+        destinations.name
+      ],
     });
 
     // Remove duplicates based on name
