@@ -15,21 +15,6 @@ export const MAJOR_CITIES = [
     }
   },
   {
-    name: "London, United Kingdom",
-    cityName: "London",
-    countryName: "United Kingdom",
-    countryCode: "GB",
-    description: "Historic capital known for its culture, architecture and royal heritage",
-    latitude: 51.5074,
-    longitude: -0.1278,
-    seasonalRatings: {
-      spring: 4,
-      summer: 5,
-      autumn: 4,
-      winter: 3
-    }
-  },
-  {
     name: "Berlin, Germany",
     cityName: "Berlin",
     countryName: "Germany",
@@ -60,6 +45,36 @@ export const MAJOR_CITIES = [
     }
   },
   {
+    name: "Sicily, Italy",
+    cityName: "Palermo",
+    countryName: "Italy",
+    countryCode: "IT",
+    description: "Mediterranean island known for Mount Etna, ancient ruins, and delicious cuisine",
+    latitude: 37.5990,
+    longitude: 14.0154,
+    seasonalRatings: {
+      spring: 5,
+      summer: 4,
+      autumn: 5,
+      winter: 3
+    }
+  },
+  {
+    name: "Provence, France",
+    cityName: "Aix-en-Provence",
+    countryName: "France",
+    countryCode: "FR",
+    description: "Picturesque region famous for lavender fields, wine, and charming villages",
+    latitude: 43.5297,
+    longitude: 5.4474,
+    seasonalRatings: {
+      spring: 5,
+      summer: 5,
+      autumn: 4,
+      winter: 3
+    }
+  },
+  {
     name: "Rome, Italy",
     cityName: "Rome",
     countryName: "Italy",
@@ -70,6 +85,36 @@ export const MAJOR_CITIES = [
     seasonalRatings: {
       spring: 5,
       summer: 4,
+      autumn: 5,
+      winter: 4
+    }
+  },
+  {
+    name: "Tuscany, Italy",
+    cityName: "Florence",
+    countryName: "Italy",
+    countryCode: "IT",
+    description: "Region known for Renaissance art, wine country, and medieval towns",
+    latitude: 43.7696,
+    longitude: 11.2558,
+    seasonalRatings: {
+      spring: 5,
+      summer: 4,
+      autumn: 5,
+      winter: 3
+    }
+  },
+  {
+    name: "Bavaria, Germany",
+    cityName: "Munich",
+    countryName: "Germany",
+    countryCode: "DE",
+    description: "Region famous for Oktoberfest, castles, and the Alps",
+    latitude: 48.1351,
+    longitude: 11.5820,
+    seasonalRatings: {
+      spring: 4,
+      summer: 5,
       autumn: 5,
       winter: 4
     }
