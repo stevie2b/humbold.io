@@ -218,6 +218,26 @@ export default function Questionnaire() {
     return null;
   };
 
+  const recommendedDestinationsQuery = useQuery({
+    queryKey: ["/api/destinations/recommended", getCurrentSeason()],
+    queryFn: async () => {
+      const season = getCurrentSeason();
+      if (!season) return [];
+
+      try {
+        const response = await fetch(`/api/destinations/recommended?season=${season}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch recommended destinations");
+        }
+        return response.json();
+      } catch (error) {
+        console.error("Error fetching recommended destinations:", error);
+        return [];
+      }
+    },
+    enabled: !!getCurrentSeason(),
+  });
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -476,6 +496,27 @@ export default function Questionnaire() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Curated recommendations based on your selected time period
                 </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {recommendedDestinationsQuery.data?.slice(0, 4).map((destination) => (
+                    <DestinationCard
+                      key={destination.id}
+                      destination={destination}
+                      selected={form.watch("destinations").includes(destination.id)}
+                      onSelect={() => {
+                        const currentDestinations = form.watch("destinations");
+                        if (currentDestinations.includes(destination.id)) {
+                          form.setValue(
+                            "destinations",
+                            currentDestinations.filter((id) => id !== destination.id)
+                          );
+                        } else {
+                          form.setValue("destinations", [...currentDestinations, destination.id]);
+                        }
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>
