@@ -43,6 +43,7 @@ export async function searchDestinations(query: string) {
         name: true,
         countryName: true,
         description: true,
+        seasonalRatings: true,
       },
     });
 
@@ -64,6 +65,7 @@ export async function searchDestinations(query: string) {
         name: true,
         countryName: true,
         description: true,
+        seasonalRatings: true,
       },
     });
 
