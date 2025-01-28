@@ -347,24 +347,18 @@ export default function Questionnaire() {
         {step === 2 && (
           <Card>
             <CardContent className="pt-6">
-              <h3 className="text-lg font-semibold mb-4">Where would you like to go?</h3>
-              <div className="mb-6">
-                <FormField
-                  control={form.control}
-                  name="destinations"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Search for destinations</FormLabel>
-                      <FormControl>
-                        <div className="space-y-4">
-                          <Input
-                            placeholder="Type to search destinations (min. 2 characters)..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                          />
-                          {searchStatus}
-                          {field.value.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-4">
+              <FormField
+                control={form.control}
+                name="destinations"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-lg font-semibold mb-4">Where would you like to go?</FormLabel>
+                    <FormControl>
+                      <div className="space-y-4">
+                        {field.value.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground">Selected destinations:</p>
+                            <div className="flex flex-wrap gap-2">
                               {field.value.map((destId) => {
                                 const destination = destinationsQuery.data?.find(d => d.id === destId);
                                 if (!destination) return null;
@@ -389,9 +383,19 @@ export default function Questionnaire() {
                                 );
                               })}
                             </div>
-                          )}
+                          </div>
+                        )}
+
+                        <div className="mt-6">
+                          <FormLabel>Search for destinations</FormLabel>
+                          <Input
+                            placeholder="Type to search destinations (min. 2 characters)..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                          />
+                          {searchStatus}
                           {destinationsQuery.data && destinationsQuery.data.length > 0 && (
-                            <div className="border rounded-lg divide-y">
+                            <div className="border rounded-lg divide-y mt-4">
                               {destinationsQuery.data.map((destination: Destination) => (
                                 <div
                                   key={destination.id}
@@ -426,11 +430,11 @@ export default function Questionnaire() {
                             </div>
                           )}
                         </div>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
+                      </div>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
               <div className="mb-6">
                 <h4 className="text-md font-medium mb-2">
