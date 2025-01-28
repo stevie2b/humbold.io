@@ -25,9 +25,9 @@ interface TravelItineraryProps {
 export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
-    containScroll: false,
-    dragFree: true,
     loop: false,
+    skipSnaps: false,
+    dragFree: false,
   });
 
   const scrollPrev = useCallback(() => {
@@ -38,13 +38,10 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  // Debug log to check itinerary length
-  console.log("Itinerary length:", itinerary?.length);
-
   if (!itinerary?.length) return null;
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full px-4">
       {/* Navigation Buttons */}
       <Button
         variant="outline"
@@ -82,7 +79,7 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
           {itinerary.map((day) => (
             <div 
               key={day.day}
-              className="flex-[0_0_calc(100%-1rem)] sm:flex-[0_0_calc(50%-1rem)] lg:flex-[0_0_calc(33.333%-1rem)] xl:flex-[0_0_calc(25%-1rem)]"
+              className="w-full md:w-[calc(50%-8px)] lg:w-[calc(33.333%-12px)] min-w-0 flex-shrink-0"
             >
               <TravelDayCard {...day} />
             </div>
