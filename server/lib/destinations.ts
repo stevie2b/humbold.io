@@ -47,6 +47,10 @@ export async function searchDestinations(query: string) {
     const cachedResults = await db.query.destinations.findMany({
       where: (destinations, { like }) =>
         like(destinations.name, `%${query}%`),
+      columns: {
+        id: true,
+        name: true,
+      },
       limit: 10,
     });
 
@@ -130,6 +134,12 @@ export async function searchDestinations(query: string) {
     if (destinationsToInsert.length > 0) {
       console.log("Inserting new destinations:", destinationsToInsert.length);
       await db.insert(destinations).values(destinationsToInsert);
+
+      // Return just the basic info needed for the list
+      return destinationsToInsert.map(dest => ({
+        id: dest.name, // Using name as id since we don't have the inserted ids
+        name: dest.name,
+      }));
     }
 
     return destinationsToInsert;

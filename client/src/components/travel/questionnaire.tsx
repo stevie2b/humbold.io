@@ -15,14 +15,12 @@ import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { SEASONS, TRAVELER_TYPES, ACTIVITIES } from "@/lib/constants";
 import { generateICS } from "@/lib/ics-generator";
-import DestinationCard from "./destination-card";
 import { Input } from "@/components/ui/input";
+import { Check } from "lucide-react";
 
 interface Destination {
   id: string;
   name: string;
-  description: string | null;
-  imageUrl: string | null;
 }
 
 const formSchema = z.object({
@@ -45,7 +43,6 @@ export default function Questionnaire() {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
-  // Update the destination search query with better error handling
   const destinationsQuery = useQuery({
     queryKey: ["/api/destinations/search", searchQuery],
     queryFn: async ({ queryKey }) => {
@@ -69,8 +66,6 @@ export default function Questionnaire() {
         return (data || []).map((dest: any) => ({
           id: String(dest.id || ''),
           name: dest.name || 'Unknown Destination',
-          description: dest.description || 'No description available',
-          imageUrl: dest.imageUrl || 'https://via.placeholder.com/400x300',
         }));
       } catch (error) {
         console.error("Search error:", error);
@@ -80,7 +75,6 @@ export default function Questionnaire() {
     enabled: !!searchQuery && searchQuery.length > 2,
   });
 
-  // Add status indicators for the search
   const searchStatus = destinationsQuery.status === "pending" ? (
     <p className="text-sm text-muted-foreground">Searching...</p>
   ) : destinationsQuery.status === "error" ? (
@@ -350,7 +344,6 @@ export default function Questionnaire() {
           <Card>
             <CardContent className="pt-6">
               <h3 className="text-lg font-semibold mb-4">Where would you like to go?</h3>
-
               <div className="mb-6">
                 <FormField
                   control={form.control}
@@ -367,28 +360,32 @@ export default function Questionnaire() {
                           />
                           {searchStatus}
                           {destinationsQuery.data && destinationsQuery.data.length > 0 && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="border rounded-lg divide-y">
                               {destinationsQuery.data.map((destination: Destination) => (
-                                <DestinationCard
+                                <div
                                   key={destination.id}
-                                  destination={{
-                                    id: destination.id,
-                                    name: destination.name,
-                                    description: destination.description || 'No description available',
-                                    image: destination.imageUrl || 'https://via.placeholder.com/400x300',
-                                  }}
-                                  selected={form.watch('destinations').includes(destination.id)}
-                                  onSelect={() => {
+                                  className={`flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 ${
+                                    form.watch('destinations').includes(destination.id)
+                                      ? 'bg-primary/5'
+                                      : ''
+                                  }`}
+                                  onClick={() => {
                                     const currentDestinations = form.watch('destinations');
                                     if (currentDestinations.includes(destination.id)) {
-                                      form.setValue('destinations', 
+                                      form.setValue(
+                                        'destinations',
                                         currentDestinations.filter(id => id !== destination.id)
                                       );
                                     } else {
                                       form.setValue('destinations', [...currentDestinations, destination.id]);
                                     }
                                   }}
-                                />
+                                >
+                                  <span className="text-sm">{destination.name}</span>
+                                  {form.watch('destinations').includes(destination.id) && (
+                                    <Check className="h-4 w-4 text-primary" />
+                                  )}
+                                </div>
                               ))}
                             </div>
                           )}
