@@ -4,7 +4,7 @@ import { generateTravelPlan } from "./lib/openai";
 import { searchDestinations } from "./lib/destinations";
 import { db } from "@db";
 import { destinations } from "@db/schema";
-import { desc } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
 export function registerRoutes(app: Express): Server {
   app.post("/api/plan", async (req, res) => {
@@ -39,10 +39,9 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ message: "Season parameter is required" });
       }
 
-      const seasonField = `seasonalRatings.${season}` as keyof typeof destinations.$inferSelect.seasonalRatings;
-
+      // Use raw SQL for the order by clause since we need to access a JSON field
       const results = await db.query.destinations.findMany({
-        orderBy: (destinations, { desc }) => [desc(destinations.seasonalRatings[season])],
+        orderBy: sql`seasonal_ratings->>'${sql.raw(season)}' DESC`,
         limit: 4,
       });
 
