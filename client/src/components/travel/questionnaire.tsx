@@ -95,7 +95,36 @@ export default function Questionnaire() {
     planMutation.mutate(data);
   };
 
-  const nextStep = () => setStep(step + 1);
+  const nextStep = () => {
+    const formState = form.getValues();
+
+    // Validate current step
+    if (step === 1) {
+      const hasSelectedDates = !!(formState.startDate && formState.endDate);
+      const hasSelectedSeason = !!formState.season;
+      const hasValidTimeSelection = hasSelectedDates || hasSelectedSeason;
+      if (!hasValidTimeSelection) {
+        toast({
+          title: "Validation Error",
+          description: "Please select either a date range or a season",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else if (step === 2) {
+      if (!formState.destinations || formState.destinations.length === 0) {
+        toast({
+          title: "Validation Error",
+          description: "Please select at least one destination",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    setStep(step + 1);
+  };
+
   const prevStep = () => setStep(step - 1);
 
   const hasSelectedDates = !!(form.watch("startDate") && form.watch("endDate"));
