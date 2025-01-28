@@ -78,6 +78,9 @@ export default function Questionnaire() {
   const nextStep = () => setStep(step + 1);
   const prevStep = () => setStep(step - 1);
 
+  const hasSelectedDates = !!(form.watch("startDate") && form.watch("endDate"));
+  const hasSelectedSeason = !!form.watch("season");
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -85,7 +88,7 @@ export default function Questionnaire() {
           <Card>
             <CardContent className="pt-6">
               <div className="space-y-6">
-                <div className="space-y-4">
+                <div className={`space-y-4 ${hasSelectedSeason ? "opacity-50" : ""}`}>
                   <h3 className="text-lg font-semibold">Select Travel Dates</h3>
                   <div className="flex flex-col md:flex-row gap-4">
                     <FormField
@@ -96,7 +99,10 @@ export default function Questionnaire() {
                           <FormLabel>Start Date</FormLabel>
                           <Popover>
                             <PopoverTrigger asChild>
-                              <Button variant="outline">
+                              <Button 
+                                variant="outline" 
+                                disabled={hasSelectedSeason}
+                              >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {field.value ? format(field.value, "PPP") : "Select start date"}
                               </Button>
@@ -124,7 +130,10 @@ export default function Questionnaire() {
                           <FormLabel>End Date</FormLabel>
                           <Popover>
                             <PopoverTrigger asChild>
-                              <Button variant="outline">
+                              <Button 
+                                variant="outline"
+                                disabled={hasSelectedSeason}
+                              >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {field.value ? format(field.value, "PPP") : "Select end date"}
                               </Button>
@@ -147,10 +156,17 @@ export default function Questionnaire() {
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <h3 className={`text-lg font-semibold ${form.watch("startDate") && form.watch("endDate") ? "opacity-50" : ""}`}>
-                    Or Select a Season
-                  </h3>
+                <div 
+                  className={`space-y-4 ${hasSelectedDates ? "opacity-50" : ""}`}
+                  onClick={() => {
+                    if (hasSelectedDates) {
+                      // Clear dates when clicking on season section
+                      form.setValue("startDate", undefined);
+                      form.setValue("endDate", undefined);
+                    }
+                  }}
+                >
+                  <h3 className="text-lg font-semibold">Or Select a Season</h3>
                   <FormField
                     control={form.control}
                     name="season"
@@ -164,17 +180,15 @@ export default function Questionnaire() {
                               form.setValue("startDate", undefined);
                               form.setValue("endDate", undefined);
                             }}
-                            className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${
-                              form.watch("startDate") && form.watch("endDate") ? "opacity-50 pointer-events-none" : ""
-                            }`}
-                            disabled={!!(form.watch("startDate") && form.watch("endDate"))}
+                            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                            disabled={hasSelectedDates}
                           >
-                            {SEASONS.filter(season => season.value !== "specific").map((season) => (
+                            {SEASONS.map((season) => (
                               <div key={season.value} className="flex items-center space-x-2">
                                 <RadioGroupItem value={season.value} id={season.value} />
                                 <label 
                                   htmlFor={season.value} 
-                                  className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70`}
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                                 >
                                   {season.label}
                                 </label>
