@@ -39,21 +39,21 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ message: "Season parameter is required" });
       }
 
-      // Use DISTINCT ON to ensure we get unique destinations
+      // Get top rated destinations for the season
       const results = await db.query.destinations.findMany({
         orderBy: [
-          sql`seasonal_ratings->>'${sql.raw(season)}' DESC`,
+          sql`(seasonal_ratings->>'${sql.raw(season)}')::numeric DESC`,
           sql`name ASC`
         ],
-        limit: 4,
+        limit: 8, // Fetch more to allow for filtering
       });
 
-      // Ensure unique destinations by name
+      // Filter to unique destinations by name, keeping the highest rated ones
       const uniqueResults = Array.from(
         new Map(results.map(item => [item.name, item])).values()
-      );
+      ).slice(0, 4); // Keep top 4 after deduplication
 
-      res.json(uniqueResults.slice(0, 4));
+      res.json(uniqueResults);
     } catch (error) {
       console.error("Failed to get recommended destinations:", error);
       res.status(500).json({ message: "Failed to get recommended destinations" });
