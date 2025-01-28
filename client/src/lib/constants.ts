@@ -61,6 +61,55 @@ export const DESTINATIONS = [
     description: "Lavender fields, charming villages, and wine country",
     image: "https://images.unsplash.com/photo-1563913695-0c600eb794e5?w=800",
     seasons: ["summer"]
+  },
+  {
+    id: "barcelona-spain",
+    name: "Barcelona, Spain 🇪🇸",
+    description: "Stunning architecture, vibrant culture, and Mediterranean beaches",
+    image: "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800",
+    seasons: ["spring", "summer", "autumn"]
+  },
+  {
+    id: "bavaria-germany",
+    name: "Bavaria, Germany 🇩🇪",
+    description: "Oktoberfest, fairytale castles, and the Alps",
+    image: "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=800",
+    seasons: ["summer", "autumn"]
+  },
+  {
+    id: "bali-indonesia",
+    name: "Bali, Indonesia 🇮🇩",
+    description: "Tropical paradise, temples, and rice terraces",
+    image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800",
+    seasons: ["spring", "summer"]
+  },
+  {
+    id: "cape-town-sa",
+    name: "Cape Town, South Africa 🇿🇦",
+    description: "Table Mountain, beaches, and wine regions",
+    image: "https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=800",
+    seasons: ["spring", "autumn"]
+  },
+  {
+    id: "queenstown-nz",
+    name: "Queenstown, New Zealand 🇳🇿",
+    description: "Adventure capital, stunning landscapes, and skiing",
+    image: "https://images.unsplash.com/photo-1589871173175-bc32f64a8e44?w=800",
+    seasons: ["winter", "summer"]
+  },
+  {
+    id: "marrakech-morocco",
+    name: "Marrakech, Morocco 🇲🇦",
+    description: "Ancient medinas, souks, and desert adventures",
+    image: "https://images.unsplash.com/photo-1597211684565-dca64d72bdfe?w=800",
+    seasons: ["spring", "autumn"]
+  },
+  {
+    id: "dubai-uae",
+    name: "Dubai, UAE 🇦🇪",
+    description: "Modern architecture, luxury shopping, and desert safaris",
+    image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800",
+    seasons: ["winter"]
   }
 ];
 

@@ -109,11 +109,23 @@ export default function Questionnaire() {
 
   const getSeasonalDestinations = () => {
     const season = getCurrentSeason();
-    if (!season) return DESTINATIONS;
+    if (!season) return DESTINATIONS.slice(0, 4);
 
-    return DESTINATIONS.filter(dest =>
+    const seasonalDestinations = DESTINATIONS.filter(dest =>
       dest.seasons.includes(season)
-    ).slice(0, 4);
+    );
+
+    // Prioritize destinations based on season suitability
+    const prioritized = [...seasonalDestinations].sort((a, b) => {
+      // Prioritize destinations that are exclusively good in the current season
+      const aExclusive = a.seasons.length === 1;
+      const bExclusive = b.seasons.length === 1;
+      if (aExclusive && !bExclusive) return -1;
+      if (!aExclusive && bExclusive) return 1;
+      return 0;
+    });
+
+    return prioritized.slice(0, 4);
   };
 
   return (
