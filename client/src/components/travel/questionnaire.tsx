@@ -24,7 +24,7 @@ import TravelItinerary from "./travel-itinerary";
 import { Slider } from "@/components/ui/slider";
 
 interface Destination {
-  id: number;
+  id: number; // Make id required
   name: string;
   imageUrl?: string;
   description?: string;
@@ -94,18 +94,22 @@ export default function Questionnaire() {
           throw new Error(errorText);
         }
         const data = await response.json();
-        return (data || []).map((dest: any) => ({
-          id: dest.id || Math.floor(Math.random() * 1000000), // Ensure ID exists
-          name: dest.name || 'Unknown Destination',
-          description: dest.description,
-          seasonalRatings: dest.seasonalRatings || {
-            spring: 0,
-            summer: 0,
-            autumn: 0,
-            winter: 0
-          },
-          imageUrl: dest.imageUrl
-        }));
+        return (data || []).map((dest: any) => {
+          // Ensure each destination has a valid ID
+          const id = typeof dest.id === 'number' ? dest.id : Math.floor(Math.random() * 1000000);
+          return {
+            id,
+            name: dest.name || 'Unknown Destination',
+            description: dest.description || '',
+            seasonalRatings: dest.seasonalRatings || {
+              spring: 0,
+              summer: 0,
+              autumn: 0,
+              winter: 0
+            },
+            imageUrl: dest.imageUrl || ''
+          };
+        });
       } catch (error) {
         console.error("Search error:", error);
         return [];
@@ -151,24 +155,24 @@ export default function Questionnaire() {
   });
 
   useEffect(() => {
-    const formDestinations = form.watch("destinations");
+    const formDestinations = form.watch("destinations") || []; // Ensure we have an array
     const allDestinations = [
       ...(destinationsQuery.data || []),
       ...(recommendedDestinationsQuery.data || [])
-    ];
+    ].filter(dest => dest && typeof dest.id === 'number'); // Filter out invalid destinations
 
     setSelectedDestinations(prevSelected => {
       const newSelected = [...prevSelected];
 
       // Filter out any destinations that are no longer selected
       const filtered = newSelected.filter(dest =>
-        formDestinations.includes(String(dest.id))
+        dest && dest.id && formDestinations.includes(dest.id.toString())
       );
 
       // Add any newly selected destinations
       formDestinations.forEach(destId => {
-        if (!filtered.find(d => String(d.id) === destId)) {
-          const dest = allDestinations.find(d => String(d.id) === destId);
+        if (!filtered.find(d => d && d.id && d.id.toString() === destId)) {
+          const dest = allDestinations.find(d => d && d.id && d.id.toString() === destId);
           if (dest) {
             filtered.push(dest);
           }
@@ -481,12 +485,12 @@ export default function Questionnaire() {
                     <FormLabel className="text-lg font-semibold mb-4">Where would you like to go?</FormLabel>
                     <FormControl>
                       <div className="space-y-6">
-                        {/* Selected Destinations Badges */}
+                        {/* Selected Destinations */}
                         {selectedDestinations.length > 0 && (
                           <div className="space-y-2">
                             <p className="text-sm text-muted-foreground">Selected destinations:</p>
                             <div className="flex flex-wrap gap-2">
-                              {selectedDestinations.map((destination) => (
+                              {selectedDestinations.filter(d => d && d.id).map((destination) => (
                                 <Badge
                                   key={destination.id}
                                   variant="secondary"
@@ -496,8 +500,8 @@ export default function Questionnaire() {
                                   <button
                                     onClick={(e) => {
                                       e.preventDefault();
-                                      const newDestinations = form.getValues('destinations')
-                                        .filter(id => id !== String(destination.id));
+                                      const newDestinations = field.value
+                                        .filter(id => id !== destination.id.toString());
                                       form.setValue('destinations', newDestinations);
                                     }}
                                     className="hover:bg-muted rounded-full p-1"
