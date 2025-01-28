@@ -20,7 +20,7 @@ import { Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import DestinationCard from "./destination-card";
-import JourneyVisualization from "./journey-visualization";
+import TravelItinerary from "./travel-itinerary";
 
 interface Destination {
   id: number;
@@ -210,19 +210,11 @@ export default function Questionnaire() {
       return response.json();
     },
     onSuccess: (data) => {
-      // Create journey visualization data
-      const journeyDestinations = selectedDestinations.map((dest) => ({
-        id: String(dest.id),
-        name: dest.name,
-        startDate: form.getValues("startDate"),
-        endDate: form.getValues("endDate"),
-      }));
-
       generateICS(data.itinerary);
-      setStep(5); // Add new step for visualization
+      setStep(5);
       toast({
         title: "Success!",
-        description: "Your travel itinerary has been generated and downloaded.",
+        description: "Your travel itinerary has been generated.",
       });
     },
     onError: () => {
@@ -674,17 +666,9 @@ export default function Questionnaire() {
 
         {step === 5 && (
           <div className="space-y-6">
-            <JourneyVisualization
-              destinations={selectedDestinations.map(dest => ({
-                id: String(dest.id),
-                name: dest.name,
-                startDate: form.getValues("startDate"),
-                endDate: form.getValues("endDate"),
-              }))}
-              season={form.getValues("season")}
-            />
+            <TravelItinerary itinerary={planMutation.data?.itinerary || []} />
 
-            <div className="flex justify-center">
+            <div className="flex justify-center mt-8">
               <Button
                 type="button"
                 onClick={() => setStep(1)}
@@ -697,7 +681,7 @@ export default function Questionnaire() {
                 type="button"
                 onClick={() => generateICS(planMutation.data?.itinerary)}
               >
-                Download Itinerary Again
+                Download Itinerary
               </Button>
             </div>
           </div>

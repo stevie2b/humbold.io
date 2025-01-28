@@ -4,11 +4,19 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export interface TravelPlan {
   itinerary: Array<{
-    title: string;
-    description: string;
-    startTime: string;
-    endTime: string;
-    location?: string;
+    day: number;
+    accommodation: {
+      title: string;
+      details: string;
+    };
+    transportation: {
+      title: string;
+      details: string;
+    };
+    activities: Array<{
+      time: string;
+      title: string;
+    }>;
   }>;
   recommendations: string[];
 }
@@ -24,29 +32,31 @@ function generateBasicItinerary(preferences: {
   const startDate = preferences.specificDate || new Date();
 
   // Generate a basic 3-day itinerary
-  const itinerary = [
-    {
-      title: "Arrival and City Exploration",
-      description: `Start your journey in ${preferences.destination} with a relaxed exploration of the city center.`,
-      startTime: new Date(startDate).toISOString(),
-      endTime: new Date(startDate.setHours(startDate.getHours() + 8)).toISOString(),
-      location: preferences.destination
+  const itinerary = Array.from({ length: 3 }, (_, i) => ({
+    day: i + 1,
+    accommodation: {
+      title: "Hotel Check-in/Stay",
+      details: `Comfortable accommodation in ${preferences.destination}`
     },
-    {
-      title: `${preferences.activities[0] || 'Local'} Experience`,
-      description: `Immerse yourself in ${preferences.destination}'s culture and attractions.`,
-      startTime: new Date(startDate.setDate(startDate.getDate() + 1)).toISOString(),
-      endTime: new Date(startDate.setHours(startDate.getHours() + 8)).toISOString(),
-      location: preferences.destination
+    transportation: {
+      title: i === 0 ? "Arrival" : i === 2 ? "Departure" : "Local Transport",
+      details: i === 0 ? "Airport Transfer" : i === 2 ? "Airport Transfer" : "Walking and local transit"
     },
-    {
-      title: "Departure Day Activities",
-      description: "Final day to explore and prepare for departure.",
-      startTime: new Date(startDate.setDate(startDate.getDate() + 1)).toISOString(),
-      endTime: new Date(startDate.setHours(startDate.getHours() + 8)).toISOString(),
-      location: preferences.destination
-    }
-  ];
+    activities: [
+      {
+        time: "10:00",
+        title: i === 0 ? "City Orientation" : `${preferences.activities[0] || 'Local'} Experience`
+      },
+      {
+        time: "14:00",
+        title: "Lunch and Rest"
+      },
+      {
+        time: "16:00",
+        title: i === 2 ? "Prepare for Departure" : "Explore Local Attractions"
+      }
+    ]
+  }));
 
   return {
     itinerary,
@@ -82,11 +92,21 @@ export async function generateTravelPlan(preferences: {
       {
         "itinerary": [
           {
-            "title": "Activity title",
-            "description": "Detailed description",
-            "startTime": "ISO date string",
-            "endTime": "ISO date string",
-            "location": "Location name"
+            "day": 1,
+            "accommodation": {
+              "title": "Hotel name or type",
+              "details": "Check-in details and location"
+            },
+            "transportation": {
+              "title": "Transportation type",
+              "details": "Transportation details"
+            },
+            "activities": [
+              {
+                "time": "HH:MM",
+                "title": "Activity description"
+              }
+            ]
           }
         ],
         "recommendations": ["Additional recommendation 1", "Additional recommendation 2"]
@@ -106,8 +126,6 @@ export async function generateTravelPlan(preferences: {
     return JSON.parse(response.choices[0].message.content) as TravelPlan;
   } catch (error: any) {
     console.error("Error generating travel plan:", error);
-
-    // If we hit API limits or other OpenAI errors, use the fallback
     console.log("Using fallback due to OpenAI error");
     return generateBasicItinerary(preferences);
   }
