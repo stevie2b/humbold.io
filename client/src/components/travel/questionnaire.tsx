@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Card, CardContent } from "@/components/ui/card";
-import { format } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -181,6 +181,11 @@ export default function Questionnaire() {
                       )}
                     />
                   </div>
+                  {hasSelectedDates && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Duration: {differenceInDays(form.watch("endDate"), form.watch("startDate")) + 1} days
+                    </p>
+                  )}
                 </div>
 
                 <div
