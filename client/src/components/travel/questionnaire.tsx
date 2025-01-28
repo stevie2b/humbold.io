@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -24,7 +24,6 @@ const formSchema = z.object({
   travelerType: z.string(),
   activities: z.array(z.string()).min(1),
 }).refine((data) => {
-  // Either both dates are provided, or a season is selected
   return (data.startDate && data.endDate) || data.season;
 }, {
   message: "Please select either a date range or a season",
@@ -32,6 +31,7 @@ const formSchema = z.object({
 
 export default function Questionnaire() {
   const [step, setStep] = useState(1);
+  const [endDateOpen, setEndDateOpen] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -40,6 +40,15 @@ export default function Questionnaire() {
       activities: [],
     },
   });
+
+  // Clear season when both dates are selected
+  useEffect(() => {
+    const startDate = form.watch("startDate");
+    const endDate = form.watch("endDate");
+    if (startDate && endDate) {
+      form.setValue("season", undefined);
+    }
+  }, [form.watch("startDate"), form.watch("endDate")]);
 
   const planMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
@@ -119,7 +128,13 @@ export default function Questionnaire() {
                               <Calendar
                                 mode="single"
                                 selected={field.value}
-                                onSelect={field.onChange}
+                                onSelect={(date) => {
+                                  field.onChange(date);
+                                  // Open end date picker after selecting start date
+                                  if (date) {
+                                    setEndDateOpen(true);
+                                  }
+                                }}
                                 disabled={(date) =>
                                   date < new Date() || date > new Date(2025, 11, 31)
                                 }
@@ -136,7 +151,7 @@ export default function Questionnaire() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>End Date</FormLabel>
-                          <Popover>
+                          <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
                             <PopoverTrigger asChild>
                               <Button 
                                 variant="outline"
@@ -150,7 +165,10 @@ export default function Questionnaire() {
                               <Calendar
                                 mode="single"
                                 selected={field.value}
-                                onSelect={field.onChange}
+                                onSelect={(date) => {
+                                  field.onChange(date);
+                                  setEndDateOpen(false);
+                                }}
                                 disabled={(date) =>
                                   date < (form.watch("startDate") || new Date()) ||
                                   date > new Date(2025, 11, 31)
@@ -171,6 +189,7 @@ export default function Questionnaire() {
                       // Clear dates when clicking on season section
                       form.setValue("startDate", undefined);
                       form.setValue("endDate", undefined);
+                      setEndDateOpen(false);
                     }
                   }}
                 >
@@ -187,6 +206,7 @@ export default function Questionnaire() {
                               // Clear dates when selecting a season
                               form.setValue("startDate", undefined);
                               form.setValue("endDate", undefined);
+                              setEndDateOpen(false);
                             }}
                             className="grid grid-cols-1 md:grid-cols-2 gap-4"
                             disabled={hasSelectedDates}
