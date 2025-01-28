@@ -25,6 +25,7 @@ const formSchema = z.object({
   destinations: z.array(z.string()).min(1, "Please select at least one destination"),
   travelerType: z.string(),
   activities: z.array(z.string()).min(1),
+  customActivity: z.string().optional(),
 }).refine((data) => {
   return (data.startDate && data.endDate) || data.season;
 }, {
@@ -34,6 +35,7 @@ const formSchema = z.object({
 export default function Questionnaire() {
   const [step, setStep] = useState(1);
   const [endDateOpen, setEndDateOpen] = useState(false);
+  const [showCustomActivity, setShowCustomActivity] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -41,6 +43,7 @@ export default function Questionnaire() {
     defaultValues: {
       destinations: [],
       activities: [],
+      customActivity: "",
     },
   });
 
@@ -375,26 +378,54 @@ export default function Questionnaire() {
                   <FormItem>
                     <FormLabel className="text-lg font-semibold">What are your preferred activities?</FormLabel>
                     <FormControl>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                        {ACTIVITIES.map((activity) => (
-                          <div key={activity.value} className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              id={activity.value}
-                              checked={field.value?.includes(activity.value)}
-                              onChange={(e) => {
-                                const updatedActivities = e.target.checked
-                                  ? [...(field.value || []), activity.value]
-                                  : field.value?.filter((v) => v !== activity.value) || [];
-                                field.onChange(updatedActivities);
-                              }}
-                              className="h-4 w-4"
-                            />
-                            <label htmlFor={activity.value} className="text-sm font-medium leading-none">
-                              {activity.label}
-                            </label>
-                          </div>
-                        ))}
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                          {ACTIVITIES.filter(activity => activity.value !== 'other').map((activity) => (
+                            <div key={activity.value} className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id={activity.value}
+                                checked={field.value?.includes(activity.value)}
+                                onChange={(e) => {
+                                  const updatedActivities = e.target.checked
+                                    ? [...(field.value || []), activity.value]
+                                    : field.value?.filter((v) => v !== activity.value) || [];
+                                  field.onChange(updatedActivities);
+                                }}
+                                className="h-4 w-4"
+                              />
+                              <label htmlFor={activity.value} className="text-sm font-medium leading-none">
+                                {activity.label}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="mt-4">
+                          <FormField
+                            control={form.control}
+                            name="customActivity"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Other activities (optional)</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="Enter your own activities..."
+                                    {...field}
+                                    onChange={(e) => {
+                                      field.onChange(e.target.value);
+                                      if (e.target.value && !form.watch("activities").includes("custom")) {
+                                        form.setValue("activities", [...form.watch("activities"), "custom"]);
+                                      } else if (!e.target.value) {
+                                        form.setValue("activities", form.watch("activities").filter(a => a !== "custom"));
+                                      }
+                                    }}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                       </div>
                     </FormControl>
                   </FormItem>
