@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,7 +13,7 @@ import { format, differenceInDays } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { SEASONS, DESTINATIONS, TRAVELER_TYPES, ACTIVITIES } from "@/lib/constants";
+import { SEASONS, TRAVELER_TYPES, ACTIVITIES } from "@/lib/constants";
 import { generateICS } from "@/lib/ics-generator";
 import DestinationCard from "./destination-card";
 import { Input } from "@/components/ui/input";
@@ -35,8 +36,13 @@ const formSchema = z.object({
 export default function Questionnaire() {
   const [step, setStep] = useState(1);
   const [endDateOpen, setEndDateOpen] = useState(false);
-  const [showCustomActivity, setShowCustomActivity] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
+
+  const destinationsQuery = useQuery({
+    queryKey: ["/api/destinations/search", searchQuery],
+    enabled: !!searchQuery,
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -110,26 +116,6 @@ export default function Questionnaire() {
     return null;
   };
 
-  const getSeasonalDestinations = () => {
-    const season = getCurrentSeason();
-    if (!season) return DESTINATIONS.slice(0, 4);
-
-    const seasonalDestinations = DESTINATIONS.filter(dest =>
-      dest.seasons.includes(season)
-    );
-
-    // Prioritize destinations based on season suitability
-    const prioritized = [...seasonalDestinations].sort((a, b) => {
-      // Prioritize destinations that are exclusively good in the current season
-      const aExclusive = a.seasons.length === 1;
-      const bExclusive = b.seasons.length === 1;
-      if (aExclusive && !bExclusive) return -1;
-      if (!aExclusive && bExclusive) return 1;
-      return 0;
-    });
-
-    return prioritized.slice(0, 4);
-  };
 
   return (
     <Form {...form}>
@@ -287,15 +273,36 @@ export default function Questionnaire() {
                     <FormItem>
                       <FormLabel>Search for destinations</FormLabel>
                       <FormControl>
-                        <Combobox
-                          options={DESTINATIONS.map(dest => ({
-                            value: dest.id,
-                            label: dest.name
-                          }))}
-                          value={field.value}
-                          onSelect={field.onChange}
+                        <Input
                           placeholder="Type to search destinations..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="mb-4"
                         />
+                        {destinationsQuery.data && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {destinationsQuery.data.map((destination) => (
+                              <DestinationCard
+                                key={destination.id}
+                                destination={{
+                                  id: destination.id.toString(),
+                                  name: destination.name,
+                                  description: destination.description || "No description available",
+                                  image: destination.imageUrl || "https://via.placeholder.com/400x300",
+                                }}
+                                selected={field.value.includes(destination.id.toString())}
+                                onSelect={() => {
+                                  const currentDestinations = field.value;
+                                  if (currentDestinations.includes(destination.id.toString())) {
+                                    field.onChange(currentDestinations.filter(id => id !== destination.id.toString()));
+                                  } else {
+                                    field.onChange([...currentDestinations, destination.id.toString()]);
+                                  }
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )}
                       </FormControl>
                     </FormItem>
                   )}
@@ -313,26 +320,6 @@ export default function Questionnaire() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {getSeasonalDestinations().map((destination) => (
-                  <DestinationCard
-                    key={destination.id}
-                    destination={destination}
-                    selected={form.watch("destinations").includes(destination.id)}
-                    onSelect={() => {
-                      const currentDestinations = form.watch("destinations");
-                      if (currentDestinations.includes(destination.id)) {
-                        form.setValue(
-                          "destinations",
-                          currentDestinations.filter(id => id !== destination.id)
-                        );
-                      } else {
-                        form.setValue("destinations", [...currentDestinations, destination.id]);
-                      }
-                    }}
-                  />
-                ))}
-              </div>
             </CardContent>
           </Card>
         )}
