@@ -38,18 +38,43 @@ export default function Questionnaire() {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
+  // Update the destination search query with better error handling
   const destinationsQuery = useQuery({
     queryKey: ["/api/destinations/search", searchQuery],
     queryFn: async ({ queryKey }) => {
       const [_, query] = queryKey;
-      const response = await fetch(`/api/destinations/search?q=${encodeURIComponent(query)}`);
-      if (!response.ok) {
-        throw new Error(await response.text());
+      if (!query || query.length < 2) {
+        return [];
       }
-      return response.json();
+
+      try {
+        const response = await fetch(`/api/destinations/search?q=${encodeURIComponent(query)}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          toast({
+            title: "Search Error",
+            description: "Failed to search destinations. Please try again.",
+            variant: "destructive",
+          });
+          throw new Error(errorText);
+        }
+        return response.json();
+      } catch (error) {
+        console.error("Search error:", error);
+        return [];
+      }
     },
     enabled: !!searchQuery && searchQuery.length > 2,
   });
+
+  // Add status indicators for the search
+  const searchStatus = destinationsQuery.status === "pending" ? (
+    <p className="text-sm text-muted-foreground">Searching...</p>
+  ) : destinationsQuery.status === "error" ? (
+    <p className="text-sm text-destructive">Error searching destinations</p>
+  ) : destinationsQuery.data?.length === 0 ? (
+    <p className="text-sm text-muted-foreground">No destinations found</p>
+  ) : null;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -314,6 +339,7 @@ export default function Questionnaire() {
               <h3 className="text-lg font-semibold mb-4">Where would you like to go?</h3>
 
               <div className="mb-6">
+                {/* Update the destinations section UI */}
                 <FormField
                   control={form.control}
                   name="destinations"
@@ -323,11 +349,12 @@ export default function Questionnaire() {
                       <FormControl>
                         <div className="space-y-4">
                           <Input
-                            placeholder="Type to search destinations..."
+                            placeholder="Type to search destinations (min. 2 characters)..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                           />
-                          {destinationsQuery.data && (
+                          {searchStatus}
+                          {destinationsQuery.data && destinationsQuery.data.length > 0 && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                               {destinationsQuery.data.map((destination: any) => (
                                 <DestinationCard
