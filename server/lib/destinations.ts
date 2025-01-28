@@ -29,9 +29,10 @@ export async function searchDestinations(query: string) {
   try {
     await initializeCities();
 
-    // Search with case-insensitive partial matches on city name or country name
+    // Search with case-insensitive partial matches on city name, country name, or the full name
     const results = await db.query.destinations.findMany({
       where: (destinations, { or, ilike }) => or(
+        ilike(destinations.name, `%${query}%`),
         ilike(destinations.cityName, `%${query}%`),
         ilike(destinations.countryName, `%${query}%`)
       ),

@@ -118,5 +118,110 @@ export const MAJOR_CITIES = [
       autumn: 5,
       winter: 4
     }
+  },
+  {
+    name: "Edinburgh, Scotland",
+    cityName: "Edinburgh",
+    countryName: "United Kingdom",
+    countryCode: "GB",
+    description: "Historic capital with stunning castle and rich cultural festivals",
+    latitude: 55.9533,
+    longitude: -3.1883,
+    seasonalRatings: {
+      spring: 4,
+      summer: 5,
+      autumn: 4,
+      winter: 3
+    }
+  },
+  {
+    name: "New England, USA",
+    cityName: "Boston",
+    countryName: "United States",
+    countryCode: "US",
+    description: "Region famous for fall foliage and coastal charm",
+    latitude: 42.3601,
+    longitude: -71.0589,
+    seasonalRatings: {
+      spring: 4,
+      summer: 5,
+      autumn: 5,
+      winter: 3
+    }
+  },
+  {
+    name: "Banff, Canada",
+    cityName: "Banff",
+    countryName: "Canada",
+    countryCode: "CA",
+    description: "Mountain paradise with stunning lakes and wildlife",
+    latitude: 51.1784,
+    longitude: -115.5708,
+    seasonalRatings: {
+      spring: 4,
+      summer: 5,
+      autumn: 4,
+      winter: 5
+    }
+  },
+  {
+    name: "Kyoto, Japan",
+    cityName: "Kyoto",
+    countryName: "Japan",
+    countryCode: "JP",
+    description: "Ancient capital with temples and traditional gardens",
+    latitude: 35.0116,
+    longitude: 135.7681,
+    seasonalRatings: {
+      spring: 5,
+      summer: 4,
+      autumn: 5,
+      winter: 4
+    }
+  },
+  {
+    name: "Seoul, South Korea",
+    cityName: "Seoul",
+    countryName: "South Korea",
+    countryCode: "KR",
+    description: "Dynamic metropolis blending tradition with modernity",
+    latitude: 37.5665,
+    longitude: 126.9780,
+    seasonalRatings: {
+      spring: 5,
+      summer: 4,
+      autumn: 5,
+      winter: 3
+    }
+  },
+  {
+    name: "Morocco",
+    cityName: "Marrakech",
+    countryName: "Morocco",
+    countryCode: "MA",
+    description: "Exotic destination with markets, deserts, and rich culture",
+    latitude: 31.6295,
+    longitude: -7.9811,
+    seasonalRatings: {
+      spring: 5,
+      summer: 3,
+      autumn: 5,
+      winter: 4
+    }
+  },
+  {
+    name: "South Africa",
+    cityName: "Cape Town",
+    countryName: "South Africa",
+    countryCode: "ZA",
+    description: "Diverse country with wildlife, wine regions, and stunning coasts",
+    latitude: -33.9249,
+    longitude: 18.4241,
+    seasonalRatings: {
+      spring: 5,
+      summer: 4,
+      autumn: 5,
+      winter: 3
+    }
   }
 ];
