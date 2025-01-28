@@ -9,11 +9,18 @@ import { sql } from "drizzle-orm";
 export function registerRoutes(app: Express): Server {
   app.post("/api/plan", async (req, res) => {
     try {
+      if (!process.env.OPENAI_API_KEY) {
+        throw new Error("OpenAI API key is not configured");
+      }
+
       const plan = await generateTravelPlan(req.body);
       res.json(plan);
     } catch (error) {
       console.error("Failed to generate travel plan:", error);
-      res.status(500).json({ message: "Failed to generate travel plan" });
+      res.status(500).json({ 
+        message: "Failed to generate travel plan", 
+        details: error.message 
+      });
     }
   });
 
@@ -39,19 +46,17 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ message: "Season parameter is required" });
       }
 
-      // Get top rated destinations for the season
       const results = await db.query.destinations.findMany({
         orderBy: [
           sql`(seasonal_ratings->>'${sql.raw(season)}')::numeric DESC`,
           sql`name ASC`
         ],
-        limit: 8, // Fetch more to allow for filtering
+        limit: 8,
       });
 
-      // Filter to unique destinations by name, keeping the highest rated ones
       const uniqueResults = Array.from(
         new Map(results.map(item => [item.name, item])).values()
-      ).slice(0, 4); // Keep top 4 after deduplication
+      ).slice(0, 4);
 
       res.json(uniqueResults);
     } catch (error) {
