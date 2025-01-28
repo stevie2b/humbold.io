@@ -3,17 +3,26 @@ import { motion } from "framer-motion";
 
 interface DestinationCardProps {
   destination: {
-    id: string;
+    id: number;
     name: string;
-    image: string;
-    description: string;
+    imageUrl?: string;
+    description?: string;
+    seasonalRatings: {
+      spring: number;
+      summer: number;
+      autumn: number;
+      winter: number;
+    };
   };
   selected: boolean;
   onSelect: () => void;
 }
 
 export default function DestinationCard({ destination, selected, onSelect }: DestinationCardProps) {
-  const { name, description, image } = destination;
+  const { name, description, imageUrl } = destination;
+
+  // Default image if none provided
+  const fallbackImage = "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800";
 
   return (
     <motion.div
@@ -30,7 +39,7 @@ export default function DestinationCard({ destination, selected, onSelect }: Des
           <div
             className="w-full h-48 rounded-lg bg-cover bg-center mb-4"
             style={{ 
-              backgroundImage: `url(${image})`,
+              backgroundImage: `url(${imageUrl || fallbackImage})`,
               backgroundColor: '#f3f4f6' // Fallback color
             }}
           />

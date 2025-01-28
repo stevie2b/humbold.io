@@ -19,11 +19,19 @@ import { Input } from "@/components/ui/input";
 import { Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
+import DestinationCard from "./destination-card";
 
 interface Destination {
-  id: string;
+  id: number;
   name: string;
+  imageUrl?: string;
   description?: string;
+  seasonalRatings: {
+    spring: number;
+    summer: number;
+    autumn: number;
+    winter: number;
+  };
 }
 
 interface SelectedDestination extends Destination {
@@ -229,7 +237,8 @@ export default function Questionnaire() {
         if (!response.ok) {
           throw new Error("Failed to fetch recommended destinations");
         }
-        return response.json();
+        const data = await response.json();
+        return data as Destination[];
       } catch (error) {
         console.error("Error fetching recommended destinations:", error);
         return [];
@@ -502,16 +511,16 @@ export default function Questionnaire() {
                     <DestinationCard
                       key={destination.id}
                       destination={destination}
-                      selected={form.watch("destinations").includes(destination.id)}
+                      selected={form.watch("destinations").includes(String(destination.id))}
                       onSelect={() => {
                         const currentDestinations = form.watch("destinations");
-                        if (currentDestinations.includes(destination.id)) {
+                        if (currentDestinations.includes(String(destination.id))) {
                           form.setValue(
                             "destinations",
-                            currentDestinations.filter((id) => id !== destination.id)
+                            currentDestinations.filter((id) => id !== String(destination.id))
                           );
                         } else {
-                          form.setValue("destinations", [...currentDestinations, destination.id]);
+                          form.setValue("destinations", [...currentDestinations, String(destination.id)]);
                         }
                       }}
                     />
