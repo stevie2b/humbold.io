@@ -107,22 +107,24 @@ export async function searchDestinations(query: string) {
     }
 
     // Transform to our database schema
-    const destinationsToInsert: InsertDestination[] = validPlaces.map((place) => ({
-      name: place.name,
-      countryCode: place.address.country_code,
-      description: place.wikipedia_extracts?.text || "",
-      latitude: place.point.lat,
-      longitude: place.point.lon,
-      imageUrl: place.preview?.source || "",
-      seasonalRatings: {
+    const destinationsToInsert = validPlaces.map((place) => {
+      const seasonalRatings = {
         spring: calculateSeasonalRating(place),
         summer: calculateSeasonalRating(place),
         autumn: calculateSeasonalRating(place),
         winter: calculateSeasonalRating(place),
-      },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }));
+      };
+
+      return {
+        name: place.name,
+        countryCode: place.address.country_code,
+        description: place.wikipedia_extracts?.text || null,
+        latitude: place.point.lat,
+        longitude: place.point.lon,
+        imageUrl: place.preview?.source || null,
+        seasonalRatings,
+      } satisfies Omit<InsertDestination, 'id' | 'createdAt' | 'updatedAt'>;
+    });
 
     // Insert into database
     if (destinationsToInsert.length > 0) {
