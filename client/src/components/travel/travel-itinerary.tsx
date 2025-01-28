@@ -81,9 +81,6 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
       ...prev,
       [dayIndex]: [...(prev[dayIndex] || []), removedActivity]
     }));
-
-    // Remove from current activities (you'll need to implement this part)
-    // This would typically involve updating the parent component's state
   };
 
   const handleAddActivity = (dayIndex: number, activity: ActivityItem) => {
@@ -92,9 +89,6 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
       ...prev,
       [dayIndex]: (prev[dayIndex] || []).filter(a => a.title !== activity.title)
     }));
-
-    // Add to current activities (you'll need to implement this part)
-    // This would typically involve updating the parent component's state
   };
 
   if (!itinerary?.length) return null;
@@ -147,7 +141,26 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
                   {...day} 
                   onRemoveActivity={(activityIndex) => handleRemoveActivity(index, activityIndex)}
                   onAddActivity={(activity) => handleAddActivity(index, activity)}
-                  recommendations={removedActivities[index] || []}
+                  recommendations={[
+                    {
+                      time: "09:00",
+                      duration: "12:00",
+                      title: "Local Museum Visit"
+                    },
+                    {
+                      time: "14:00",
+                      duration: "17:00",
+                      title: "City Walking Tour"
+                    },
+                    {
+                      time: "18:00",
+                      duration: "20:00",
+                      title: "Local Cuisine Experience"
+                    },
+                    ...(removedActivities[index] || [])
+                  ]}
+                  isFirstCard={index === 0}
+                  isLastCard={index === itinerary.length - 1}
                 />
               </div>
             ))}
