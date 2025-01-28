@@ -16,6 +16,7 @@ import { SEASONS, DESTINATIONS, TRAVELER_TYPES, ACTIVITIES } from "@/lib/constan
 import { generateICS } from "@/lib/ics-generator";
 import DestinationCard from "./destination-card";
 import { Input } from "@/components/ui/input";
+import { Combobox } from "@/components/ui/combobox";
 
 const formSchema = z.object({
   startDate: z.date().optional(),
@@ -92,7 +93,6 @@ export default function Questionnaire() {
   const hasSelectedSeason = !!form.watch("season");
   const hasValidTimeSelection = hasSelectedDates || hasSelectedSeason;
 
-  // Get the current season based on selected dates or season choice
   const getCurrentSeason = () => {
     if (form.watch("season")) {
       return form.watch("season");
@@ -107,7 +107,6 @@ export default function Questionnaire() {
     return null;
   };
 
-  // Filter destinations based on current season
   const getSeasonalDestinations = () => {
     const season = getCurrentSeason();
     if (!season) return DESTINATIONS;
@@ -278,16 +277,16 @@ export default function Questionnaire() {
                   name="destination"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Enter your dream destination</FormLabel>
+                      <FormLabel>Search for a destination</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Type your destination here..."
-                          value={customDestination}
-                          onChange={(e) => {
-                            setCustomDestination(e.target.value);
-                            field.onChange(e.target.value);
-                          }}
-                          className="mb-4"
+                        <Combobox
+                          options={DESTINATIONS.map(dest => ({
+                            value: dest.id,
+                            label: dest.name
+                          }))}
+                          value={field.value}
+                          onSelect={field.onChange}
+                          placeholder="Type to search destinations..."
                         />
                       </FormControl>
                     </FormItem>
@@ -298,23 +297,22 @@ export default function Questionnaire() {
               <div className="mb-6">
                 <h4 className="text-md font-medium mb-2">
                   {getCurrentSeason()
-                    ? `Recommended destinations for ${getCurrentSeason()}`
+                    ? `Best places to visit in ${getCurrentSeason()}`
                     : "Popular destinations"}
                 </h4>
                 <p className="text-sm text-muted-foreground mb-4">
-                  These destinations are perfect for your selected time period
+                  Curated recommendations based on your selected time period
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {getSeasonalDestinations().map((destination) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {getSeasonalDestinations().slice(0, 4).map((destination) => (
                   <DestinationCard
                     key={destination.id}
                     destination={destination}
                     selected={form.watch("destination") === destination.id}
                     onSelect={() => {
                       form.setValue("destination", destination.id);
-                      setCustomDestination("");
                     }}
                   />
                 ))}

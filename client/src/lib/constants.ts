@@ -7,41 +7,61 @@ export const SEASONS = [
 
 export const DESTINATIONS = [
   {
-    id: "bavaria",
-    name: "Bavaria, Germany 🇩🇪",
-    description: "Experience Oktoberfest and scenic Alps",
-    image: "https://images.unsplash.com/photo-1605130284535-11dd9eedc58a",
-  },
-  {
-    id: "tuscany",
-    name: "Tuscany, Italy 🇮🇹",
-    description: "Explore vineyards and charming towns",
-    image: "https://images.unsplash.com/photo-1554366347-897a5113f6ab",
-  },
-  {
-    id: "edinburgh",
-    name: "Edinburgh, Scotland 🏰",
-    description: "Discover autumn festivals and history",
-    image: "https://images.unsplash.com/photo-1606944331341-72bf6523ff5e",
-  },
-  {
-    id: "newengland",
-    name: "New England, USA 🇺🇸",
-    description: "Experience stunning fall foliage",
-    image: "https://images.unsplash.com/photo-1594661745200-810105bcf054",
-  },
-  {
-    id: "kyoto",
+    id: "kyoto-japan",
     name: "Kyoto, Japan 🇯🇵",
-    description: "Visit temples with vivid autumn colors",
-    image: "https://images.unsplash.com/photo-1484910292437-025e5d13ce87",
+    description: "Cherry blossoms, historic temples, and traditional gardens",
+    image: "https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=800",
+    seasons: ["spring"]
   },
   {
-    id: "morocco",
-    name: "Morocco 🇲🇦",
-    description: "Desert adventures in comfortable weather",
-    image: "https://images.unsplash.com/photo-1584467541268-b040f83be3fd",
+    id: "amalfi-italy",
+    name: "Amalfi Coast, Italy 🇮🇹",
+    description: "Stunning coastline, Mediterranean cuisine, and charming villages",
+    image: "https://images.unsplash.com/photo-1533904844756-29b4d39661c4?w=800",
+    seasons: ["spring", "summer"]
   },
+  {
+    id: "santorini-greece",
+    name: "Santorini, Greece 🇬🇷",
+    description: "White-washed buildings, spectacular sunsets, and crystal-clear waters",
+    image: "https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?w=800",
+    seasons: ["spring", "summer"]
+  },
+  {
+    id: "iceland",
+    name: "Iceland 🇮🇸",
+    description: "Northern lights, hot springs, and dramatic landscapes",
+    image: "https://images.unsplash.com/photo-1486944670663-93841e8d8a42?w=800",
+    seasons: ["winter"]
+  },
+  {
+    id: "swiss-alps",
+    name: "Swiss Alps 🇨🇭",
+    description: "Snow-capped peaks, skiing, and cozy chalets",
+    image: "https://images.unsplash.com/photo-1531256456869-ce942a665e80?w=800",
+    seasons: ["winter"]
+  },
+  {
+    id: "new-england",
+    name: "New England, USA 🇺🇸",
+    description: "Fall foliage, historic towns, and coastal charm",
+    image: "https://images.unsplash.com/photo-1507181080368-cc2195abacdf?w=800",
+    seasons: ["autumn"]
+  },
+  {
+    id: "maldives",
+    name: "Maldives 🇲🇻",
+    description: "Overwater bungalows, coral reefs, and pristine beaches",
+    image: "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=800",
+    seasons: ["winter", "spring"]
+  },
+  {
+    id: "provence-france",
+    name: "Provence, France 🇫🇷",
+    description: "Lavender fields, charming villages, and wine country",
+    image: "https://images.unsplash.com/photo-1563913695-0c600eb794e5?w=800",
+    seasons: ["summer"]
+  }
 ];
 
 export const TRAVELER_TYPES = [
