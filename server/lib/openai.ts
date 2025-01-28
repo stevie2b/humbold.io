@@ -30,31 +30,47 @@ function generateBasicItinerary(preferences: {
   activities: string[];
   numberOfDays: number;
 }): TravelPlan {
-  const numDays = preferences.numberOfDays;
+  // Ensure we use the exact number of days specified
+  const numDays = Math.max(1, Math.min(30, preferences.numberOfDays));
+  console.log(`Generating basic itinerary for ${numDays} days`);
+
+  // Generate activities based on preferences
+  const defaultActivities = preferences.activities.filter(a => a !== 'custom');
+  const activityTypes = [
+    ...defaultActivities,
+    'Local Exploration',
+    'Cultural Visit',
+    'Relaxation Time',
+    'Local Cuisine'
+  ];
 
   // Generate a basic itinerary for the specified number of days
   const itinerary = Array.from({ length: numDays }, (_, i) => ({
     day: i + 1,
     accommodation: {
-      title: "Hotel Check-in/Stay",
+      title: i === 0 ? "Hotel Check-in" : "Hotel Stay",
       details: `Comfortable accommodation in ${preferences.destination}`
     },
     transportation: {
       title: i === 0 ? "Arrival" : i === numDays - 1 ? "Departure" : "Local Transport",
-      details: i === 0 ? "Airport Transfer" : i === numDays - 1 ? "Airport Transfer" : "Walking and local transit"
+      details: i === 0 ? "Airport Transfer" : i === numDays - 1 ? "Airport Transfer" : "Local transit and walking"
     },
     activities: [
       {
-        time: "10:00",
-        title: i === 0 ? "City Orientation" : `${preferences.activities[0] || 'Local'} Experience`
+        time: "09:00",
+        title: i === 0 
+          ? "Welcome Orientation" 
+          : `${activityTypes[i % activityTypes.length]} Activity`
       },
       {
-        time: "14:00",
-        title: "Lunch and Rest"
+        time: "13:00",
+        title: "Lunch Break and Rest"
       },
       {
-        time: "16:00",
-        title: i === numDays - 1 ? "Prepare for Departure" : "Explore Local Attractions"
+        time: "15:00",
+        title: i === numDays - 1 
+          ? "Prepare for Departure" 
+          : `${activityTypes[(i + 2) % activityTypes.length]} Experience`
       }
     ]
   }));
@@ -63,8 +79,10 @@ function generateBasicItinerary(preferences: {
     itinerary,
     recommendations: [
       `Best time to visit ${preferences.destination} is during ${preferences.season}`,
-      `Perfect for ${preferences.travelerType} travelers`,
-      `Don't miss the local attractions and ${preferences.activities.join(', ')}`
+      `This itinerary is designed for ${preferences.travelerType} travelers`,
+      `Don't miss the local attractions and activities: ${preferences.activities.join(', ')}`,
+      `Pack appropriate clothing for ${preferences.season} weather`,
+      `Consider local transportation options for easy access to attractions`
     ]
   };
 }
