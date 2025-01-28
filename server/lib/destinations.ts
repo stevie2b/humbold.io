@@ -96,7 +96,7 @@ export async function searchDestinations(query: string) {
 
     // Filter successful results and transform to our schema
     const validPlaces = detailedPlaces
-      .filter((result): result is PromiseFulfilledResult<OpenTripMapPlaceDetails> => 
+      .filter((result): result is PromiseFulfilledResult<OpenTripMapPlaceDetails> =>
         result.status === "fulfilled"
       )
       .map(result => result.value);
@@ -110,8 +110,8 @@ export async function searchDestinations(query: string) {
       name: place.name,
       countryCode: place.address.country_code,
       description: place.wikipedia_extracts?.text || "",
-      latitude: place.point.lat.toString(),
-      longitude: place.point.lon.toString(),
+      latitude: String(place.point?.lat || 0),
+      longitude: String(place.point?.lon || 0),
       imageUrl: place.preview?.source || "",
       seasonalRatings: {
         spring: calculateSeasonalRating(place),
