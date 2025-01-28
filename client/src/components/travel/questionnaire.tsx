@@ -17,18 +17,23 @@ import { generateICS } from "@/lib/ics-generator";
 import DestinationCard from "./destination-card";
 
 const formSchema = z.object({
-  season: z.string(),
-  specificDate: z.date().optional(),
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
+  season: z.string().optional(),
   destination: z.string(),
   travelerType: z.string(),
   activities: z.array(z.string()).min(1),
+}).refine((data) => {
+  // Either both dates are provided, or a season is selected
+  return (data.startDate && data.endDate) || data.season;
+}, {
+  message: "Please select either a date range or a season",
 });
 
 export default function Questionnaire() {
   const [step, setStep] = useState(1);
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const { toast } = useToast();
-  
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -43,11 +48,11 @@ export default function Questionnaire() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to generate plan");
       }
-      
+
       return response.json();
     },
     onSuccess: (data) => {
@@ -79,70 +84,104 @@ export default function Questionnaire() {
         {step === 1 && (
           <Card>
             <CardContent className="pt-6">
-              <FormField
-                control={form.control}
-                name="season"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-lg font-semibold">When would you like to travel?</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          if (value === "specific") {
-                            setShowDatePicker(true);
-                          } else {
-                            setShowDatePicker(false);
-                          }
-                        }}
-                        className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4"
-                      >
-                        {SEASONS.map((season) => (
-                          <div key={season.value} className="flex items-center space-x-2">
-                            <RadioGroupItem value={season.value} id={season.value} />
-                            <label htmlFor={season.value} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                              {season.label}
-                            </label>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Select Travel Dates</h3>
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <FormField
+                      control={form.control}
+                      name="startDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Start Date</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline">
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {field.value ? format(field.value, "PPP") : "Select start date"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                disabled={(date) =>
+                                  date < new Date() || date > new Date(2025, 11, 31)
+                                }
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </FormItem>
+                      )}
+                    />
 
-              {showDatePicker && (
-                <FormField
-                  control={form.control}
-                  name="specificDate"
-                  render={({ field }) => (
-                    <FormItem className="mt-4">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline">
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, "PPP") : "Pick a date"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) =>
-                              date < new Date() || date > new Date(2025, 11, 31)
-                            }
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </FormItem>
-                  )}
-                />
-              )}
+                    <FormField
+                      control={form.control}
+                      name="endDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>End Date</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline">
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {field.value ? format(field.value, "PPP") : "Select end date"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                disabled={(date) =>
+                                  date < (form.watch("startDate") || new Date()) ||
+                                  date > new Date(2025, 11, 31)
+                                }
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Or Select a Season</h3>
+                  <FormField
+                    control={form.control}
+                    name="season"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              // Clear dates when selecting a season
+                              form.setValue("startDate", undefined);
+                              form.setValue("endDate", undefined);
+                            }}
+                            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                          >
+                            {SEASONS.filter(season => season.value !== "specific").map((season) => (
+                              <div key={season.value} className="flex items-center space-x-2">
+                                <RadioGroupItem value={season.value} id={season.value} />
+                                <label htmlFor={season.value} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                  {season.label}
+                                </label>
+                              </div>
+                            ))}
+                          </RadioGroup>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}
-
         {step === 2 && (
           <Card>
             <CardContent className="pt-6">

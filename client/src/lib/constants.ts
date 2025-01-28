@@ -3,7 +3,6 @@ export const SEASONS = [
   { value: "summer", label: "Summer 🌞 (June–August)" },
   { value: "autumn", label: "Autumn 🍂 (September–November)" },
   { value: "winter", label: "Winter ❄️ (December–February)" },
-  { value: "specific", label: "A specific date 🗓️" },
 ];
 
 export const DESTINATIONS = [
