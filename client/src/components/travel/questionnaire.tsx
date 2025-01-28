@@ -156,7 +156,7 @@ export default function Questionnaire() {
       const newSelected = [...prevSelected];
 
       // Filter out any destinations that are no longer selected
-      const filtered = newSelected.filter(dest => 
+      const filtered = newSelected.filter(dest =>
         formDestinations.includes(String(dest.id))
       );
 
@@ -173,7 +173,7 @@ export default function Questionnaire() {
       return filtered;
     });
   }, [
-    form.watch("destinations"), 
+    form.watch("destinations"),
     destinationsQuery.data,
     recommendedDestinationsQuery.data
   ]);
@@ -307,11 +307,17 @@ export default function Questionnaire() {
                                     onSelect={(date) => {
                                       field.onChange(date);
                                       if (date) {
-                                        const daysUntilMonthEnd = differenceInDays(endOfMonth(date), date);
+                                        // Get the last day of the selected month
+                                        const lastDayOfMonth = endOfMonth(date);
+                                        const daysUntilMonthEnd = differenceInDays(lastDayOfMonth, date);
+
+                                        // If the selected date is within the last 7 days of the month,
+                                        // show the next month for end date selection
                                         if (daysUntilMonthEnd <= 7) {
                                           setEndDateDefaultMonth(addMonths(date, 1));
                                         } else {
-                                          setEndDateDefaultMonth(undefined);
+                                          // Otherwise, show the same month
+                                          setEndDateDefaultMonth(date);
                                         }
                                         setEndDateOpen(true);
                                       }

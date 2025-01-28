@@ -33,27 +33,8 @@ export async function searchDestinations(query: string) {
   try {
     await initializeCities();
 
-    // First, try to find exact country matches
-    const countryResults = await db.query.destinations.findMany({
-      where: (destinations) => 
-        eq(destinations.name, destinations.countryName) &&
-        ilike(destinations.countryName, `%${query}%`),
-      columns: {
-        id: true,
-        name: true,
-        countryName: true,
-        description: true,
-        seasonalRatings: true,
-      },
-    });
-
-    // If we found exact country matches, return those first
-    if (countryResults.length > 0) {
-      return countryResults;
-    }
-
-    // Otherwise, perform the regular search
-    const nonCountryResults = await db.query.destinations.findMany({
+    // Do a single query that handles both country and city/region matches
+    const results = await db.query.destinations.findMany({
       where: (destinations) => 
         or(
           ilike(destinations.name, `%${query}%`),
@@ -72,6 +53,7 @@ export async function searchDestinations(query: string) {
         sql`
           CASE 
             WHEN name ILIKE ${query} THEN 1
+            WHEN country_name ILIKE ${query} AND name = country_name THEN 1
             WHEN city_name ILIKE ${query} THEN 2
             WHEN country_name ILIKE ${query} THEN 3
             ELSE 4
@@ -81,9 +63,9 @@ export async function searchDestinations(query: string) {
       ],
     });
 
-    // Remove duplicates based on name
-    const uniqueResults = nonCountryResults.filter((dest, index, self) =>
-      index === self.findIndex((d) => d.name === dest.name)
+    // Remove duplicates by using a Map with name as key
+    const uniqueResults = Array.from(
+      new Map(results.map(dest => [dest.name, dest])).values()
     );
 
     return uniqueResults.slice(0, 10); // Limit to 10 results
