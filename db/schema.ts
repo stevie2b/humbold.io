@@ -14,10 +14,10 @@ export const destinations = pgTable("destinations", {
   name: text("name").notNull(),
   countryCode: varchar("country_code", { length: 2 }).notNull(),
   description: text("description"),
-  latitude: decimal("latitude", { precision: 10, scale: 7 }).notNull(),
-  longitude: decimal("longitude", { precision: 10, scale: 7 }).notNull(),
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 10, scale: 7 }),
   imageUrl: text("image_url"),
-  seasonalRatings: jsonb("seasonal_ratings").notNull(), // Rating for each season
+  seasonalRatings: jsonb("seasonal_ratings").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

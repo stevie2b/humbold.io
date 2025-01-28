@@ -99,7 +99,8 @@ export async function searchDestinations(query: string) {
       .filter((result): result is PromiseFulfilledResult<OpenTripMapPlaceDetails> =>
         result.status === "fulfilled"
       )
-      .map(result => result.value);
+      .map(result => result.value)
+      .filter(place => place.point && typeof place.point.lat === 'number' && typeof place.point.lon === 'number');
 
     if (validPlaces.length === 0) {
       return [];
@@ -110,8 +111,8 @@ export async function searchDestinations(query: string) {
       name: place.name,
       countryCode: place.address.country_code,
       description: place.wikipedia_extracts?.text || "",
-      latitude: String(place.point?.lat || 0),
-      longitude: String(place.point?.lon || 0),
+      latitude: place.point.lat,
+      longitude: place.point.lon,
       imageUrl: place.preview?.source || "",
       seasonalRatings: {
         spring: calculateSeasonalRating(place),
@@ -119,6 +120,8 @@ export async function searchDestinations(query: string) {
         autumn: calculateSeasonalRating(place),
         winter: calculateSeasonalRating(place),
       },
+      createdAt: new Date(),
+      updatedAt: new Date(),
     }));
 
     // Insert into database
