@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,21 +6,28 @@ import TravelDayCard from "./travel-day-card";
 import { generateICS } from "@/lib/ics-generator";
 import { useToast } from "@/hooks/use-toast";
 
+interface ActivityItem {
+  time: string;
+  title: string;
+  duration?: string;
+}
+
 interface TravelItineraryProps {
   itinerary: Array<{
     day: number;
     accommodation: {
       title: string;
       details: string;
+      checkInTime?: string;
+      checkOutTime?: string;
     };
     transportation: {
       title: string;
       details: string;
+      arrivalTime?: string;
+      departureTime?: string;
     };
-    activities: Array<{
-      time: string;
-      title: string;
-    }>;
+    activities: ActivityItem[];
   }>;
 }
 
@@ -33,6 +40,9 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
   });
 
   const { toast } = useToast();
+
+  // State for managing removed activities per day
+  const [removedActivities, setRemovedActivities] = useState<{ [key: number]: ActivityItem[] }>({});
 
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
@@ -60,6 +70,31 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
         variant: "destructive",
       });
     }
+  };
+
+  const handleRemoveActivity = (dayIndex: number, activityIndex: number) => {
+    const day = itinerary[dayIndex];
+    const removedActivity = day.activities[activityIndex];
+
+    // Add to removed activities
+    setRemovedActivities(prev => ({
+      ...prev,
+      [dayIndex]: [...(prev[dayIndex] || []), removedActivity]
+    }));
+
+    // Remove from current activities (you'll need to implement this part)
+    // This would typically involve updating the parent component's state
+  };
+
+  const handleAddActivity = (dayIndex: number, activity: ActivityItem) => {
+    // Remove from recommendations
+    setRemovedActivities(prev => ({
+      ...prev,
+      [dayIndex]: (prev[dayIndex] || []).filter(a => a.title !== activity.title)
+    }));
+
+    // Add to current activities (you'll need to implement this part)
+    // This would typically involve updating the parent component's state
   };
 
   if (!itinerary?.length) return null;
@@ -106,13 +141,14 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
             {itinerary.map((day, index) => (
               <div 
                 key={day.day}
-                className={`flex-[0_0_33.333%] min-w-[300px] ${
-                  index === 0 ? 'pr-0' : 
-                  index === itinerary.length - 1 ? 'pl-0' : 
-                  'px-0'
-                }`}
+                className={`flex-[0_0_33.333%] min-w-[300px]`}
               >
-                <TravelDayCard {...day} />
+                <TravelDayCard 
+                  {...day} 
+                  onRemoveActivity={(activityIndex) => handleRemoveActivity(index, activityIndex)}
+                  onAddActivity={(activity) => handleAddActivity(index, activity)}
+                  recommendations={removedActivities[index] || []}
+                />
               </div>
             ))}
           </div>

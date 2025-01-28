@@ -1,19 +1,33 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
+import { X, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface TravelDayCardProps {
   day: number;
   accommodation: {
     title: string;
     details: string;
+    checkInTime?: string;
+    checkOutTime?: string;
   };
   transportation: {
     title: string;
     details: string;
+    arrivalTime?: string;
+    departureTime?: string;
   };
   activities: Array<{
     time: string;
     title: string;
+    duration?: string;
+  }>;
+  onRemoveActivity?: (index: number) => void;
+  onAddActivity?: (activity: { time: string; title: string; duration?: string }) => void;
+  recommendations?: Array<{
+    time: string;
+    title: string;
+    duration?: string;
   }>;
 }
 
@@ -54,14 +68,19 @@ export default function TravelDayCard({
   day, 
   accommodation, 
   transportation, 
-  activities 
+  activities,
+  onRemoveActivity,
+  onAddActivity,
+  recommendations = []
 }: TravelDayCardProps) {
-  // Extract times from titles/details
-  const accomTime = extractTimeFromString(accommodation.details);
-  const transTime = extractTimeFromString(transportation.details);
+  // Extract times
+  const checkInTime = accommodation.checkInTime || "15:00"; // Default check-in time
+  const checkOutTime = accommodation.checkOutTime || "11:00"; // Default check-out time
+  const arrivalTime = transportation.arrivalTime || "09:00"; // Default arrival time
+  const departureTime = transportation.departureTime || "10:00"; // Default departure time
 
-  const accomQuarters = getTimeQuarters(accomTime);
-  const transQuarters = getTimeQuarters(transTime);
+  const accomQuarters = getTimeQuarters(checkInTime);
+  const transQuarters = getTimeQuarters(arrivalTime);
 
   return (
     <motion.div
@@ -83,6 +102,10 @@ export default function TravelDayCard({
                 </div>
                 <div className="text-sm text-emerald-600">
                   {accommodation.details}
+                  <div className="mt-1">
+                    <span className="font-medium">Check-in:</span> {checkInTime} |{" "}
+                    <span className="font-medium">Check-out:</span> {checkOutTime}
+                  </div>
                 </div>
               </div>
               {/* Time indicator overlay */}
@@ -90,7 +113,7 @@ export default function TravelDayCard({
                 {[0,1,2,3].map((quarter) => (
                   <div 
                     key={quarter}
-                    className={`flex-1 ${accomQuarters.includes(quarter) ? 'bg-emerald-200/50' : ''}`}
+                    className={`flex-1 ${accomQuarters.includes(quarter) ? 'bg-emerald-300/50' : ''}`}
                   />
                 ))}
               </div>
@@ -107,6 +130,10 @@ export default function TravelDayCard({
                 </div>
                 <div className="text-sm text-amber-600">
                   {transportation.details}
+                  <div className="mt-1">
+                    <span className="font-medium">Arrival:</span> {arrivalTime} |{" "}
+                    <span className="font-medium">Departure:</span> {departureTime}
+                  </div>
                 </div>
               </div>
               {/* Time indicator overlay */}
@@ -114,7 +141,7 @@ export default function TravelDayCard({
                 {[0,1,2,3].map((quarter) => (
                   <div 
                     key={quarter}
-                    className={`flex-1 ${transQuarters.includes(quarter) ? 'bg-amber-200/50' : ''}`}
+                    className={`flex-1 ${transQuarters.includes(quarter) ? 'bg-amber-300/50' : ''}`}
                   />
                 ))}
               </div>
@@ -124,21 +151,74 @@ export default function TravelDayCard({
           {/* Activities Section - Blue */}
           <div>
             <h4 className="text-sm font-medium text-blue-700 mb-2">Activities</h4>
-            <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+            <div className="space-y-2">
+              {activities.map((activity, index) => (
+                <div 
+                  key={index} 
+                  className="bg-blue-50 rounded-lg p-3 border border-blue-200 flex items-center justify-between"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-blue-600 font-medium">
+                        {activity.time}
+                        {activity.duration && ` - ${activity.duration}`}
+                      </span>
+                      <span className="text-blue-700">
+                        {activity.title}
+                      </span>
+                    </div>
+                  </div>
+                  {onRemoveActivity && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => onRemoveActivity(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recommendations Section */}
+          {recommendations.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Recommended Activities</h4>
               <div className="space-y-2">
-                {activities.map((activity, index) => (
-                  <div key={index} className="flex text-sm">
-                    <span className="text-blue-600 font-medium w-20">
-                      {activity.time}
-                    </span>
-                    <span className="text-blue-700">
-                      {activity.title}
-                    </span>
+                {recommendations.map((activity, index) => (
+                  <div 
+                    key={index}
+                    className="bg-gray-50 rounded-lg p-3 border border-gray-200 flex items-center justify-between"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-gray-600 font-medium">
+                          {activity.time}
+                          {activity.duration && ` - ${activity.duration}`}
+                        </span>
+                        <span className="text-gray-700">
+                          {activity.title}
+                        </span>
+                      </div>
+                    </div>
+                    {onAddActivity && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => onAddActivity(activity)}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </motion.div>
