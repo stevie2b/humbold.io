@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { SEASONS, DESTINATIONS, TRAVELER_TYPES, ACTIVITIES } from "@/lib/constants";
 import { generateICS } from "@/lib/ics-generator";
 import DestinationCard from "./destination-card";
+import { Input } from "@/components/ui/input";
 
 const formSchema = z.object({
   startDate: z.date().optional(),
@@ -32,6 +33,7 @@ const formSchema = z.object({
 export default function Questionnaire() {
   const [step, setStep] = useState(1);
   const [endDateOpen, setEndDateOpen] = useState(false);
+  const [customDestination, setCustomDestination] = useState("");
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -41,7 +43,6 @@ export default function Questionnaire() {
     },
   });
 
-  // Clear season when both dates are selected
   useEffect(() => {
     const startDate = form.watch("startDate");
     const endDate = form.watch("endDate");
@@ -91,6 +92,38 @@ export default function Questionnaire() {
   const hasSelectedSeason = !!form.watch("season");
   const hasValidTimeSelection = hasSelectedDates || hasSelectedSeason;
 
+  // Get the current season based on selected dates or season choice
+  const getCurrentSeason = () => {
+    if (form.watch("season")) {
+      return form.watch("season");
+    }
+    if (form.watch("startDate")) {
+      const month = new Date(form.watch("startDate")).getMonth();
+      if (month >= 2 && month <= 4) return "spring";
+      if (month >= 5 && month <= 7) return "summer";
+      if (month >= 8 && month <= 10) return "autumn";
+      return "winter";
+    }
+    return null;
+  };
+
+  // Filter destinations based on current season
+  const getSeasonalDestinations = () => {
+    const season = getCurrentSeason();
+    if (!season) return DESTINATIONS;
+
+    const seasonalRecommendations = {
+      spring: ["tuscany", "kyoto", "morocco"],
+      summer: ["bavaria", "newengland"],
+      autumn: ["edinburgh", "kyoto", "newengland"],
+      winter: ["bavaria", "morocco"],
+    };
+
+    return DESTINATIONS.filter(dest =>
+      seasonalRecommendations[season].includes(dest.id)
+    );
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -102,7 +135,6 @@ export default function Questionnaire() {
                   className={`space-y-4 ${hasSelectedSeason ? "opacity-50" : ""}`}
                   onClick={() => {
                     if (hasSelectedSeason) {
-                      // Clear season when clicking on dates section
                       form.setValue("season", undefined);
                     }
                   }}
@@ -131,7 +163,6 @@ export default function Questionnaire() {
                                 selected={field.value}
                                 onSelect={(date) => {
                                   field.onChange(date);
-                                  // Open end date picker after selecting start date
                                   if (date) {
                                     setEndDateOpen(true);
                                   }
@@ -192,7 +223,6 @@ export default function Questionnaire() {
                   className={`space-y-4 ${hasSelectedDates ? "opacity-50" : ""}`}
                   onClick={() => {
                     if (hasSelectedDates) {
-                      // Clear dates when clicking on season section
                       form.setValue("startDate", undefined);
                       form.setValue("endDate", undefined);
                       setEndDateOpen(false);
@@ -209,7 +239,6 @@ export default function Questionnaire() {
                           <RadioGroup
                             onValueChange={(value) => {
                               field.onChange(value);
-                              // Clear dates when selecting a season
                               form.setValue("startDate", undefined);
                               form.setValue("endDate", undefined);
                               setEndDateOpen(false);
@@ -242,13 +271,51 @@ export default function Questionnaire() {
           <Card>
             <CardContent className="pt-6">
               <h3 className="text-lg font-semibold mb-4">Where would you like to go?</h3>
+
+              <div className="mb-6">
+                <FormField
+                  control={form.control}
+                  name="destination"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Enter your dream destination</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Type your destination here..."
+                          value={customDestination}
+                          onChange={(e) => {
+                            setCustomDestination(e.target.value);
+                            field.onChange(e.target.value);
+                          }}
+                          className="mb-4"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="mb-6">
+                <h4 className="text-md font-medium mb-2">
+                  {getCurrentSeason()
+                    ? `Recommended destinations for ${getCurrentSeason()}`
+                    : "Popular destinations"}
+                </h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  These destinations are perfect for your selected time period
+                </p>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {DESTINATIONS.map((destination) => (
+                {getSeasonalDestinations().map((destination) => (
                   <DestinationCard
                     key={destination.id}
                     destination={destination}
                     selected={form.watch("destination") === destination.id}
-                    onSelect={() => form.setValue("destination", destination.id)}
+                    onSelect={() => {
+                      form.setValue("destination", destination.id);
+                      setCustomDestination("");
+                    }}
                   />
                 ))}
               </div>
