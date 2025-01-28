@@ -66,7 +66,7 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
 
   return (
     <div className="space-y-6">
-      <div className="relative w-full px-4">
+      <div className="relative w-full">
         {/* Navigation Buttons */}
         <div className="hidden md:block">
           <Button
@@ -102,15 +102,15 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
 
         {/* Carousel Container */}
         <div className="overflow-hidden" ref={emblaRef}>
-          <div className="flex gap-4">
-            {itinerary.map((day) => (
+          <div className="flex">
+            {itinerary.map((day, index) => (
               <div 
                 key={day.day}
-                style={{ 
-                  flex: '0 0 auto',
-                  minWidth: '300px',
-                  width: 'calc((100% - 32px) / 3)'
-                }}
+                className={`flex-[0_0_33.333%] min-w-[300px] ${
+                  index === 0 ? 'pr-0' : 
+                  index === itinerary.length - 1 ? 'pl-0' : 
+                  'px-0'
+                }`}
               >
                 <TravelDayCard {...day} />
               </div>
