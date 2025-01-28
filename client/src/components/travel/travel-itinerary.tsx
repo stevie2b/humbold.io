@@ -40,6 +40,9 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
 
   if (!itinerary?.length) return null;
 
+  // Debug log to check the itinerary data
+  console.log("Rendering itinerary with length:", itinerary.length, "days:", itinerary);
+
   return (
     <div className="relative w-full px-4">
       {/* Navigation Buttons */}

@@ -32,7 +32,7 @@ function generateBasicItinerary(preferences: {
 }): TravelPlan {
   // Ensure we use the exact number of days specified
   const numDays = Math.max(1, Math.min(30, preferences.numberOfDays));
-  console.log(`Generating basic itinerary for ${numDays} days`);
+  console.log(`Generating basic itinerary for ${numDays} days`, preferences);
 
   // Generate activities based on preferences
   const defaultActivities = preferences.activities.filter(a => a !== 'custom');
@@ -74,6 +74,9 @@ function generateBasicItinerary(preferences: {
       }
     ]
   }));
+
+  // Debug log the generated itinerary
+  console.log("Generated itinerary length:", itinerary.length);
 
   return {
     itinerary,
