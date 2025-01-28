@@ -20,6 +20,7 @@ import { Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import DestinationCard from "./destination-card";
+import JourneyVisualization from "./journey-visualization";
 
 interface Destination {
   id: number;
@@ -209,7 +210,16 @@ export default function Questionnaire() {
       return response.json();
     },
     onSuccess: (data) => {
+      // Create journey visualization data
+      const journeyDestinations = selectedDestinations.map((dest) => ({
+        id: String(dest.id),
+        name: dest.name,
+        startDate: form.getValues("startDate"),
+        endDate: form.getValues("endDate"),
+      }));
+
       generateICS(data.itinerary);
+      setStep(5); // Add new step for visualization
       toast({
         title: "Success!",
         description: "Your travel itinerary has been generated and downloaded.",
@@ -662,29 +672,62 @@ export default function Questionnaire() {
           </Card>
         )}
 
-        <div className="flex justify-between">
-          {step > 1 && (
-            <Button type="button" variant="outline" onClick={prevStep}>
-              Previous
-            </Button>
-          )}
-          {step < 4 ? (
-            <Button
-              type="button"
-              onClick={nextStep}
-              disabled={
-                step === 1 && !hasValidTimeSelection ||
-                step === 2 && form.watch("destinations").length === 0
-              }
-            >
-              Next
-            </Button>
-          ) : (
-            <Button type="submit" disabled={planMutation.isPending}>
-              {planMutation.isPending ? "Generating Plan..." : "Generate Plan"}
-            </Button>
-          )}
-        </div>
+        {step === 5 && (
+          <div className="space-y-6">
+            <JourneyVisualization
+              destinations={selectedDestinations.map(dest => ({
+                id: String(dest.id),
+                name: dest.name,
+                startDate: form.getValues("startDate"),
+                endDate: form.getValues("endDate"),
+              }))}
+              season={form.getValues("season")}
+            />
+
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                onClick={() => setStep(1)}
+                variant="outline"
+                className="mr-4"
+              >
+                Plan Another Trip
+              </Button>
+              <Button
+                type="button"
+                onClick={() => generateICS(planMutation.data?.itinerary)}
+              >
+                Download Itinerary Again
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {step < 5 && (
+          <div className="flex justify-between">
+            {step > 1 && (
+              <Button type="button" variant="outline" onClick={prevStep}>
+                Previous
+              </Button>
+            )}
+            {step < 4 ? (
+              <Button
+                type="button"
+                onClick={nextStep}
+                disabled={
+                  step === 1 && !hasValidTimeSelection ||
+                  step === 2 && form.watch("destinations").length === 0
+                }
+              >
+                Next
+              </Button>
+            ) : (
+              <Button type="submit" disabled={planMutation.isPending}>
+                {planMutation.isPending ? "Generating Plan..." : "Generate Plan"}
+              </Button>
+            )}
+          </div>
+        )}
       </form>
     </Form>
   );
