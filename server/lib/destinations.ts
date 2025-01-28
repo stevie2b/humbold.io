@@ -33,22 +33,25 @@ export async function searchDestinations(query: string) {
   try {
     await initializeCities();
 
-    // First, try to find an exact country match
+    // First, try to find exact country matches (where name equals country name)
     const countryResults = await db.query.destinations.findMany({
-      where: (destinations) => ilike(destinations.countryName, query),
+      where: (destinations) => 
+        eq(destinations.name, destinations.countryName) &&
+        ilike(destinations.countryName, `%${query}%`),
       columns: {
         id: true,
         name: true,
         countryName: true,
+        description: true,
       },
     });
 
-    // If we found destinations for this country, return all of them
+    // If we found exact country matches, return those first
     if (countryResults.length > 0) {
       return countryResults;
     }
 
-    // If no exact country match, perform the regular search
+    // Otherwise, perform the regular search
     const results = await db.query.destinations.findMany({
       where: (destinations, { or, ilike }) => or(
         ilike(destinations.name, `%${query}%`),
@@ -59,6 +62,7 @@ export async function searchDestinations(query: string) {
         id: true,
         name: true,
         countryName: true,
+        description: true,
       },
       limit: 10,
     });

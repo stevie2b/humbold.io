@@ -1,4 +1,51 @@
 export const MAJOR_CITIES = [
+  // Country-level destinations
+  {
+    name: "Germany",
+    cityName: "Berlin",  // Capital city as reference
+    countryName: "Germany",
+    countryCode: "DE",
+    description: "A country rich in history, culture, and diverse landscapes from the Alps to the North Sea",
+    latitude: 51.1657,
+    longitude: 10.4515,
+    seasonalRatings: {
+      spring: 4,
+      summer: 5,
+      autumn: 4,
+      winter: 3
+    }
+  },
+  {
+    name: "Italy",
+    cityName: "Rome",
+    countryName: "Italy",
+    countryCode: "IT",
+    description: "Home to ancient history, world-renowned cuisine, and stunning Mediterranean landscapes",
+    latitude: 41.8719,
+    longitude: 12.5674,
+    seasonalRatings: {
+      spring: 5,
+      summer: 4,
+      autumn: 5,
+      winter: 3
+    }
+  },
+  {
+    name: "France",
+    cityName: "Paris",
+    countryName: "France",
+    countryCode: "FR",
+    description: "From the Alps to the Mediterranean, featuring iconic landmarks and gastronomic excellence",
+    latitude: 46.2276,
+    longitude: 2.2137,
+    seasonalRatings: {
+      spring: 5,
+      summer: 4,
+      autumn: 5,
+      winter: 3
+    }
+  },
+  // Individual cities and regions
   {
     name: "Paris, France",
     cityName: "Paris",
