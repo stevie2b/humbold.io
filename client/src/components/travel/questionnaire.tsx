@@ -22,7 +22,7 @@ const formSchema = z.object({
   startDate: z.date().optional(),
   endDate: z.date().optional(),
   season: z.string().optional(),
-  destination: z.string(),
+  destinations: z.array(z.string()).min(1, "Please select at least one destination"),
   travelerType: z.string(),
   activities: z.array(z.string()).min(1),
 }).refine((data) => {
@@ -34,12 +34,12 @@ const formSchema = z.object({
 export default function Questionnaire() {
   const [step, setStep] = useState(1);
   const [endDateOpen, setEndDateOpen] = useState(false);
-  const [customDestination, setCustomDestination] = useState("");
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      destinations: [],
       activities: [],
     },
   });
@@ -111,16 +111,9 @@ export default function Questionnaire() {
     const season = getCurrentSeason();
     if (!season) return DESTINATIONS;
 
-    const seasonalRecommendations = {
-      spring: ["tuscany", "kyoto", "morocco"],
-      summer: ["bavaria", "newengland"],
-      autumn: ["edinburgh", "kyoto", "newengland"],
-      winter: ["bavaria", "morocco"],
-    };
-
     return DESTINATIONS.filter(dest =>
-      seasonalRecommendations[season].includes(dest.id)
-    );
+      dest.seasons.includes(season)
+    ).slice(0, 4);
   };
 
   return (
@@ -274,10 +267,10 @@ export default function Questionnaire() {
               <div className="mb-6">
                 <FormField
                   control={form.control}
-                  name="destination"
+                  name="destinations"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Search for a destination</FormLabel>
+                      <FormLabel>Search for destinations</FormLabel>
                       <FormControl>
                         <Combobox
                           options={DESTINATIONS.map(dest => ({
@@ -306,13 +299,21 @@ export default function Questionnaire() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {getSeasonalDestinations().slice(0, 4).map((destination) => (
+                {getSeasonalDestinations().map((destination) => (
                   <DestinationCard
                     key={destination.id}
                     destination={destination}
-                    selected={form.watch("destination") === destination.id}
+                    selected={form.watch("destinations").includes(destination.id)}
                     onSelect={() => {
-                      form.setValue("destination", destination.id);
+                      const currentDestinations = form.watch("destinations");
+                      if (currentDestinations.includes(destination.id)) {
+                        form.setValue(
+                          "destinations",
+                          currentDestinations.filter(id => id !== destination.id)
+                        );
+                      } else {
+                        form.setValue("destinations", [...currentDestinations, destination.id]);
+                      }
                     }}
                   />
                 ))}
@@ -401,7 +402,10 @@ export default function Questionnaire() {
             <Button
               type="button"
               onClick={nextStep}
-              disabled={step === 1 && !hasValidTimeSelection}
+              disabled={
+                step === 1 && !hasValidTimeSelection ||
+                step === 2 && form.watch("destinations").length === 0
+              }
             >
               Next
             </Button>
