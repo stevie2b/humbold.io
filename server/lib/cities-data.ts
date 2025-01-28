@@ -30,32 +30,32 @@ export const MAJOR_CITIES = [
     }
   },
   {
-    name: "Tokyo, Japan",
-    cityName: "Tokyo",
-    countryName: "Japan",
-    countryCode: "JP",
-    description: "Modern metropolis blending traditional culture with cutting-edge technology",
-    latitude: 35.6762,
-    longitude: 139.6503,
+    name: "Berlin, Germany",
+    cityName: "Berlin",
+    countryName: "Germany",
+    countryCode: "DE",
+    description: "Vibrant capital with rich history and contemporary culture",
+    latitude: 52.5200,
+    longitude: 13.4050,
     seasonalRatings: {
-      spring: 5,
-      summer: 3,
-      autumn: 5,
-      winter: 4
+      spring: 4,
+      summer: 5,
+      autumn: 4,
+      winter: 2
     }
   },
   {
-    name: "New York City, USA",
-    cityName: "New York",
-    countryName: "United States",
-    countryCode: "US",
-    description: "The Big Apple, featuring iconic landmarks and diverse culture",
-    latitude: 40.7128,
-    longitude: -74.0060,
+    name: "Dublin, Ireland",
+    cityName: "Dublin",
+    countryName: "Ireland",
+    countryCode: "IE",
+    description: "Friendly capital known for its literary heritage and lively pub culture",
+    latitude: 53.3498,
+    longitude: -6.2603,
     seasonalRatings: {
       spring: 4,
       summer: 4,
-      autumn: 5,
+      autumn: 4,
       winter: 3
     }
   },
