@@ -26,6 +26,13 @@ interface Destination {
   description?: string;
 }
 
+// Add a new interface for selected destinations
+interface SelectedDestination extends Destination {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 const formSchema = z.object({
   startDate: z.date().optional(),
   endDate: z.date().optional(),
@@ -40,11 +47,23 @@ const formSchema = z.object({
   message: "Please select either a date range or a season",
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
 export default function Questionnaire() {
   const [step, setStep] = useState(1);
   const [endDateOpen, setEndDateOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDestinations, setSelectedDestinations] = useState<SelectedDestination[]>([]);
   const { toast } = useToast();
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      destinations: [],
+      activities: [],
+      customActivity: "",
+    },
+  });
 
   const destinationsQuery = useQuery({
     queryKey: ["/api/destinations/search", searchQuery],
@@ -79,6 +98,30 @@ export default function Questionnaire() {
     enabled: !!searchQuery && searchQuery.length > 2,
   });
 
+  // Effect to update selectedDestinations when form values change
+  useEffect(() => {
+    const formDestinations = form.watch("destinations");
+    const allDestinations = destinationsQuery.data || [];
+
+    // Update selected destinations while preserving existing ones
+    setSelectedDestinations(prevSelected => {
+      const newSelected = [...prevSelected];
+
+      // Add any new destinations that aren't in the selection
+      formDestinations.forEach(destId => {
+        if (!newSelected.find(d => d.id === destId)) {
+          const dest = allDestinations.find(d => d.id === destId);
+          if (dest) {
+            newSelected.push(dest);
+          }
+        }
+      });
+
+      // Remove any destinations that aren't in form values anymore
+      return newSelected.filter(dest => formDestinations.includes(dest.id));
+    });
+  }, [form.watch("destinations"), destinationsQuery.data]);
+
   const searchStatus = destinationsQuery.status === "pending" ? (
     <p className="text-sm text-muted-foreground">Searching...</p>
   ) : destinationsQuery.status === "error" ? (
@@ -86,15 +129,6 @@ export default function Questionnaire() {
   ) : destinationsQuery.data?.length === 0 ? (
     <p className="text-sm text-muted-foreground">No destinations found</p>
   ) : null;
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      destinations: [],
-      activities: [],
-      customActivity: "",
-    },
-  });
 
   useEffect(() => {
     const startDate = form.watch("startDate");
@@ -105,7 +139,7 @@ export default function Questionnaire() {
   }, [form.watch("startDate"), form.watch("endDate")]);
 
   const planMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof formSchema>) => {
+    mutationFn: async (data: FormValues) => {
       const response = await fetch("/api/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -134,7 +168,7 @@ export default function Questionnaire() {
     },
   });
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
+  const onSubmit = (data: FormValues) => {
     planMutation.mutate(data);
   };
 
@@ -355,33 +389,29 @@ export default function Questionnaire() {
                     <FormLabel className="text-lg font-semibold mb-4">Where would you like to go?</FormLabel>
                     <FormControl>
                       <div className="space-y-4">
-                        {field.value.length > 0 && (
+                        {selectedDestinations.length > 0 && (
                           <div className="space-y-2">
                             <p className="text-sm text-muted-foreground">Selected destinations:</p>
                             <div className="flex flex-wrap gap-2">
-                              {field.value.map((destId) => {
-                                const destination = destinationsQuery.data?.find(d => d.id === destId);
-                                if (!destination) return null;
-                                return (
-                                  <Badge
-                                    key={destId}
-                                    variant="secondary"
-                                    className="pl-2 pr-1 py-1 flex items-center gap-1"
+                              {selectedDestinations.map((destination) => (
+                                <Badge
+                                  key={destination.id}
+                                  variant="secondary"
+                                  className="pl-2 pr-1 py-1 flex items-center gap-1"
+                                >
+                                  {destination.name}
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      const newDestinations = field.value.filter(id => id !== destination.id);
+                                      form.setValue('destinations', newDestinations);
+                                    }}
+                                    className="hover:bg-muted rounded-full p-1"
                                   >
-                                    {destination.name}
-                                    <button
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        const newDestinations = field.value.filter(id => id !== destId);
-                                        form.setValue('destinations', newDestinations);
-                                      }}
-                                      className="hover:bg-muted rounded-full p-1"
-                                    >
-                                      <X className="h-3 w-3" />
-                                    </button>
-                                  </Badge>
-                                );
-                              })}
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </Badge>
+                              ))}
                             </div>
                           </div>
                         )}
@@ -400,12 +430,12 @@ export default function Questionnaire() {
                                 <div
                                   key={destination.id}
                                   className={`flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 ${
-                                    form.watch('destinations').includes(destination.id)
+                                    field.value.includes(destination.id)
                                       ? 'bg-primary/5'
                                       : ''
                                   }`}
                                   onClick={() => {
-                                    const currentDestinations = form.watch('destinations');
+                                    const currentDestinations = field.value;
                                     if (currentDestinations.includes(destination.id)) {
                                       form.setValue(
                                         'destinations',
@@ -422,7 +452,7 @@ export default function Questionnaire() {
                                       <p className="text-xs text-muted-foreground mt-1">{destination.description}</p>
                                     )}
                                   </div>
-                                  {form.watch('destinations').includes(destination.id) && (
+                                  {field.value.includes(destination.id) && (
                                     <Check className="h-4 w-4 text-primary" />
                                   )}
                                 </div>
