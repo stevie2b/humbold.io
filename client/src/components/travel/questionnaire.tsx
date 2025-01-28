@@ -17,7 +17,6 @@ import { SEASONS, TRAVELER_TYPES, ACTIVITIES } from "@/lib/constants";
 import { generateICS } from "@/lib/ics-generator";
 import DestinationCard from "./destination-card";
 import { Input } from "@/components/ui/input";
-import { Combobox } from "@/components/ui/combobox";
 
 const formSchema = z.object({
   startDate: z.date().optional(),
@@ -98,7 +97,6 @@ export default function Questionnaire() {
   const nextStep = () => {
     const formState = form.getValues();
 
-    // Validate current step
     if (step === 1) {
       const hasSelectedDates = !!(formState.startDate && formState.endDate);
       const hasSelectedSeason = !!formState.season;
@@ -136,7 +134,8 @@ export default function Questionnaire() {
       return form.watch("season");
     }
     if (form.watch("startDate")) {
-      const month = new Date(form.watch("startDate")).getMonth();
+      const date = new Date(form.watch("startDate")!);
+      const month = date.getMonth();
       if (month >= 2 && month <= 4) return "spring";
       if (month >= 5 && month <= 7) return "summer";
       if (month >= 8 && month <= 10) return "autumn";
@@ -166,35 +165,38 @@ export default function Questionnaire() {
                       control={form.control}
                       name="startDate"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="flex flex-col space-y-2">
                           <FormLabel>Start Date</FormLabel>
                           <FormControl>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  disabled={hasSelectedSeason}
-                                >
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {field.value ? format(field.value, "PPP") : "Select start date"}
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={(date) => {
-                                    field.onChange(date);
-                                    if (date) {
-                                      setEndDateOpen(true);
+                            <div>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    disabled={hasSelectedSeason}
+                                    className="w-full"
+                                  >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {field.value ? format(field.value, "PPP") : "Select start date"}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={field.value}
+                                    onSelect={(date) => {
+                                      field.onChange(date);
+                                      if (date) {
+                                        setEndDateOpen(true);
+                                      }
+                                    }}
+                                    disabled={(date) =>
+                                      date < new Date() || date > new Date(2025, 11, 31)
                                     }
-                                  }}
-                                  disabled={(date) =>
-                                    date < new Date() || date > new Date(2025, 11, 31)
-                                  }
-                                />
-                              </PopoverContent>
-                            </Popover>
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                            </div>
                           </FormControl>
                         </FormItem>
                       )}
@@ -204,34 +206,37 @@ export default function Questionnaire() {
                       control={form.control}
                       name="endDate"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="flex flex-col space-y-2">
                           <FormLabel>End Date</FormLabel>
                           <FormControl>
-                            <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  disabled={hasSelectedSeason}
-                                >
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {field.value ? format(field.value, "PPP") : "Select end date"}
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={(date) => {
-                                    field.onChange(date);
-                                    setEndDateOpen(false);
-                                  }}
-                                  disabled={(date) =>
-                                    date < (form.watch("startDate") || new Date()) ||
-                                    date > new Date(2025, 11, 31)
-                                  }
-                                />
-                              </PopoverContent>
-                            </Popover>
+                            <div>
+                              <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    disabled={hasSelectedSeason}
+                                    className="w-full"
+                                  >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {field.value ? format(field.value, "PPP") : "Select end date"}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={field.value}
+                                    onSelect={(date) => {
+                                      field.onChange(date);
+                                      setEndDateOpen(false);
+                                    }}
+                                    disabled={(date) =>
+                                      date < (form.watch("startDate") || new Date()) ||
+                                      date > new Date(2025, 11, 31)
+                                    }
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                            </div>
                           </FormControl>
                         </FormItem>
                       )}
@@ -261,28 +266,30 @@ export default function Questionnaire() {
                     render={({ field }) => (
                       <FormItem>
                         <FormControl>
-                          <RadioGroup
-                            onValueChange={(value) => {
-                              field.onChange(value);
-                              form.setValue("startDate", undefined);
-                              form.setValue("endDate", undefined);
-                              setEndDateOpen(false);
-                            }}
-                            className="grid grid-cols-1 md:grid-cols-2 gap-4"
-                            disabled={hasSelectedDates}
-                          >
-                            {SEASONS.map((season) => (
-                              <div key={season.value} className="flex items-center space-x-2">
-                                <RadioGroupItem value={season.value} id={season.value} />
-                                <label
-                                  htmlFor={season.value}
-                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                >
-                                  {season.label}
-                                </label>
-                              </div>
-                            ))}
-                          </RadioGroup>
+                          <div>
+                            <RadioGroup
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                form.setValue("startDate", undefined);
+                                form.setValue("endDate", undefined);
+                                setEndDateOpen(false);
+                              }}
+                              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                              disabled={hasSelectedDates}
+                            >
+                              {SEASONS.map((season) => (
+                                <div key={season.value} className="flex items-center space-x-2">
+                                  <RadioGroupItem value={season.value} id={season.value} />
+                                  <label
+                                    htmlFor={season.value}
+                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                  >
+                                    {season.label}
+                                  </label>
+                                </div>
+                              ))}
+                            </RadioGroup>
+                          </div>
                         </FormControl>
                       </FormItem>
                     )}
@@ -306,38 +313,37 @@ export default function Questionnaire() {
                     <FormItem>
                       <FormLabel>Search for destinations</FormLabel>
                       <FormControl>
-                        <div>
+                        <div className="space-y-4">
                           <Input
                             placeholder="Type to search destinations..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="mb-4"
                           />
+                          {destinationsQuery.data && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              {destinationsQuery.data.map((destination: any) => (
+                                <DestinationCard
+                                  key={destination.id}
+                                  destination={{
+                                    id: destination.id.toString(),
+                                    name: destination.name,
+                                    description: destination.description || "No description available",
+                                    image: destination.imageUrl || "https://via.placeholder.com/400x300",
+                                  }}
+                                  selected={field.value.includes(destination.id.toString())}
+                                  onSelect={() => {
+                                    const currentDestinations = field.value;
+                                    if (currentDestinations.includes(destination.id.toString())) {
+                                      field.onChange(currentDestinations.filter(id => id !== destination.id.toString()));
+                                    } else {
+                                      field.onChange([...currentDestinations, destination.id.toString()]);
+                                    }
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        {destinationsQuery.data && (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {destinationsQuery.data.map((destination: any) => (
-                              <DestinationCard
-                                key={destination.id}
-                                destination={{
-                                  id: destination.id.toString(),
-                                  name: destination.name,
-                                  description: destination.description || "No description available",
-                                  image: destination.imageUrl || "https://via.placeholder.com/400x300",
-                                }}
-                                selected={field.value.includes(destination.id.toString())}
-                                onSelect={() => {
-                                  const currentDestinations = field.value;
-                                  if (currentDestinations.includes(destination.id.toString())) {
-                                    field.onChange(currentDestinations.filter(id => id !== destination.id.toString()));
-                                  } else {
-                                    field.onChange([...currentDestinations, destination.id.toString()]);
-                                  }
-                                }}
-                              />
-                            ))}
-                          </div>
-                        )}
                       </FormControl>
                     </FormItem>
                   )}
@@ -368,19 +374,25 @@ export default function Questionnaire() {
                   <FormItem>
                     <FormLabel className="text-lg font-semibold">What type of traveler are you?</FormLabel>
                     <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4"
-                      >
-                        {TRAVELER_TYPES.map((type) => (
-                          <div key={type.value} className="flex items-center space-x-2">
-                            <RadioGroupItem value={type.value} id={type.value} />
-                            <label htmlFor={type.value} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                              {type.label}
-                            </label>
-                          </div>
-                        ))}
-                      </RadioGroup>
+                      <div>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4"
+                        >
+                          {TRAVELER_TYPES.map((type) => (
+                            <div key={type.value} className="flex items-center space-x-2">
+                              <RadioGroupItem value={type.value} id={type.value} />
+                              <label
+                                htmlFor={type.value}
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                              >
+                                {type.label}
+                              </label>
+                            </div>
+                          ))}
+                        </RadioGroup>
+                      </div>
                     </FormControl>
                   </FormItem>
                 )}
