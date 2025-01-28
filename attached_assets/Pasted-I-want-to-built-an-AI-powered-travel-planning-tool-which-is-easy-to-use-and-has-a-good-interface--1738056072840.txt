@@ -1,0 +1,72 @@
+I want to built an AI-powered travel planning tool which is easy to use and has a good interface. 
+
+On the landing page, the user will be asked questions to learn about preferences and ideal holiday. The questions are the following: 
+1. When would you like to travel?
+Spring 🌸 (e.g., March–May)
+Summer 🌞 (e.g., June–August)
+Autumn 🍂 (e.g., September–November)
+Winter ❄️ (e.g., December–February)
+A specific date 🗓️ (input field, date picker)
+
+2. Where would you like to go?
+Here are some suggestions for your choosen period destinations:
+
+Europe 🌍:
+
+Bavaria, Germany 🇩🇪 (Oktoberfest, scenic Alps)
+Tuscany, Italy 🇮🇹 (vineyards, charming towns)
+Edinburgh, Scotland 🏰 (autumn festivals, history)
+North America 🌲:
+
+New England, USA 🇺🇸 (stunning fall foliage)
+Banff, Canada 🇨🇦 (mountain trails, cozy cabins)
+Asia 🏯:
+
+Kyoto, Japan 🇯🇵 (vivid autumn colors in temples)
+Seoul, South Korea 🇰🇷 (festivals, vibrant parks)
+Other options 🌏:
+
+Morocco 🇲🇦 (comfortable weather for desert adventures)
+South Africa 🇿🇦 (springtime in the Southern Hemisphere)
+Let me know if one of these destinations appeals to you, or tell me your own idea! 😊(input field, multiple locations can be named)
+
+3. What type of traveler are you?
+Solo Traveler 🧳
+Couple ❤️
+Family 👨‍👩‍👧‍👦
+Group of Friends 🎉
+
+4. And what are your preferred activities?
+
+Sightseeing 🏰 (e.g., ancient ruins, architecture)
+Nature 🌳 (e.g., hiking, beaches, Mount Etna)
+Relaxation 🏖️ (e.g., lounging by the sea)
+Adventure 🚶‍♂️ (e.g., exploring caves, diving)
+Culture 🎭 (e.g., local food, festivals, museums)
+Something else 🌟
+
+5. Propose typical most-important sights, exp: 
+Suggested Adventure Highlights in Sicily
+Mount Etna Exploration 🌋:
+
+Hike or take a guided tour to Europe’s tallest active volcano.
+Try off-road jeep rides or even a cable car to the summit.
+Caving in Zingaro Nature Reserve 🏞️:
+
+Explore coastal caves and hike scenic trails with breathtaking sea views.
+Diving and Snorkeling 🤿:
+
+Discover underwater caves and marine life in the Aeolian Islands.
+Island-Hopping ⛵:
+
+Visit the Aeolian Islands (e.g., Stromboli for its active volcano or Lipari for hot springs).
+Historic Ruins 🏺:
+
+Explore the Valley of the Temples in Agrigento or ancient theatres in Taormina.
+Local Challenges 🌟:
+
+Try Sicilian street food like arancini or panelle.
+Join a cooking class to master cannoli or pasta alla Norma.
+Visit a local vineyard for a wine-tasting experience.
+
+Then plan the itiniary and offer an export as an .ics file. 
