@@ -30,7 +30,7 @@ function generateBasicItinerary(preferences: {
   activities: string[];
   numberOfDays: number;
 }): TravelPlan {
-  const numDays = preferences.numberOfDays || 3;
+  const numDays = preferences.numberOfDays;
 
   // Generate a basic itinerary for the specified number of days
   const itinerary = Array.from({ length: numDays }, (_, i) => ({
@@ -91,6 +91,8 @@ export async function generateTravelPlan(preferences: {
       Activities: ${preferences.activities.join(', ')}
       Number of Days: ${preferences.numberOfDays}
 
+      IMPORTANT: The itinerary MUST be exactly ${preferences.numberOfDays} days long, no more and no less.
+
       Please provide the response in this JSON format:
       {
         "itinerary": [
@@ -119,6 +121,7 @@ export async function generateTravelPlan(preferences: {
       model: "gpt-3.5-turbo",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
+      temperature: 0.7,
     });
 
     if (!response.choices[0].message.content) {
@@ -129,9 +132,11 @@ export async function generateTravelPlan(preferences: {
     const result = JSON.parse(response.choices[0].message.content) as TravelPlan;
 
     // Ensure we have the correct number of days
-    if (result.itinerary.length < preferences.numberOfDays) {
-      const remaining = preferences.numberOfDays - result.itinerary.length;
-      for (let i = 0; i < remaining; i++) {
+    if (result.itinerary.length !== preferences.numberOfDays) {
+      console.log(`Incorrect number of days in response (${result.itinerary.length}), adjusting to ${preferences.numberOfDays}`);
+
+      // If we have too few days, add more
+      while (result.itinerary.length < preferences.numberOfDays) {
         const day = result.itinerary.length + 1;
         result.itinerary.push({
           day,
@@ -158,6 +163,11 @@ export async function generateTravelPlan(preferences: {
             }
           ]
         });
+      }
+
+      // If we have too many days, truncate
+      if (result.itinerary.length > preferences.numberOfDays) {
+        result.itinerary = result.itinerary.slice(0, preferences.numberOfDays);
       }
     }
 

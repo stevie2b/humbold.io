@@ -21,11 +21,14 @@ async function initializeCities() {
         latitude: city.latitude.toString(),
         longitude: city.longitude.toString(),
       })));
+      console.log("Cities initialized successfully");
     }
 
     citiesInitialized = true;
   } catch (error) {
     console.error("Failed to initialize cities:", error);
+    // Return a default set of cities if database fails
+    return MAJOR_CITIES.slice(0, 10);
   }
 }
 
@@ -33,7 +36,6 @@ export async function searchDestinations(query: string) {
   try {
     await initializeCities();
 
-    // Do a single query that handles both country and city/region matches
     const results = await db.query.destinations.findMany({
       where: (destinations) => 
         or(
@@ -47,9 +49,9 @@ export async function searchDestinations(query: string) {
         countryName: true,
         description: true,
         seasonalRatings: true,
+        imageUrl: true,
       },
       orderBy: [
-        // Order by exact matches first, then partial matches
         sql`
           CASE 
             WHEN name ILIKE ${query} THEN 1
@@ -63,15 +65,34 @@ export async function searchDestinations(query: string) {
       ],
     });
 
-    // Remove duplicates by using a Map with name as key
+    // Remove duplicates and ensure proper format
     const uniqueResults = Array.from(
-      new Map(results.map(dest => [dest.name, dest])).values()
+      new Map(results.map(dest => [dest.name, {
+        ...dest,
+        seasonalRatings: dest.seasonalRatings || {
+          spring: 0,
+          summer: 0,
+          autumn: 0,
+          winter: 0
+        }
+      }])).values()
     );
 
     return uniqueResults.slice(0, 10); // Limit to 10 results
   } catch (error) {
     console.error("Error searching destinations:", error);
-    throw error;
+    // Return a subset of default cities that match the query
+    return MAJOR_CITIES.filter(city => 
+      city.name.toLowerCase().includes(query.toLowerCase()) ||
+      city.countryName.toLowerCase().includes(query.toLowerCase())
+    ).slice(0, 10).map(city => ({
+      id: city.id,
+      name: city.name,
+      countryName: city.countryName,
+      description: city.description,
+      seasonalRatings: city.seasonalRatings,
+      imageUrl: city.imageUrl
+    }));
   }
 }
 
