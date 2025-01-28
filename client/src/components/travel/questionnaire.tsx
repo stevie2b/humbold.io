@@ -148,7 +148,9 @@ export default function Questionnaire() {
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Or Select a Season</h3>
+                  <h3 className={`text-lg font-semibold ${form.watch("startDate") && form.watch("endDate") ? "opacity-50" : ""}`}>
+                    Or Select a Season
+                  </h3>
                   <FormField
                     control={form.control}
                     name="season"
@@ -162,12 +164,18 @@ export default function Questionnaire() {
                               form.setValue("startDate", undefined);
                               form.setValue("endDate", undefined);
                             }}
-                            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                            className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${
+                              form.watch("startDate") && form.watch("endDate") ? "opacity-50 pointer-events-none" : ""
+                            }`}
+                            disabled={!!(form.watch("startDate") && form.watch("endDate"))}
                           >
                             {SEASONS.filter(season => season.value !== "specific").map((season) => (
                               <div key={season.value} className="flex items-center space-x-2">
                                 <RadioGroupItem value={season.value} id={season.value} />
-                                <label htmlFor={season.value} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                <label 
+                                  htmlFor={season.value} 
+                                  className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70`}
+                                >
                                   {season.label}
                                 </label>
                               </div>
