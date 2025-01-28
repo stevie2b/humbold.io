@@ -418,66 +418,38 @@ export default function Questionnaire() {
                   <FormItem>
                     <FormLabel className="text-lg font-semibold mb-4">Where would you like to go?</FormLabel>
                     <FormControl>
-                      <div className="space-y-4">
-                        <div className="mb-6">
-                          <h4 className="text-md font-medium mb-2">
-                            {getCurrentSeason()
-                              ? `Best places to visit in ${getCurrentSeason()}`
-                              : "Popular destinations"}
-                          </h4>
-                          <p className="text-sm text-muted-foreground mb-4">
-                            Curated recommendations based on your selected time period
-                          </p>
-
-                          {selectedDestinations.length > 0 && (
-                            <div className="space-y-2 mb-4">
-                              <p className="text-sm text-muted-foreground">Selected destinations:</p>
-                              <div className="flex flex-wrap gap-2">
-                                {selectedDestinations.map((destination) => (
-                                  <Badge
-                                    key={destination.id}
-                                    variant="secondary"
-                                    className="pl-2 pr-1 py-1 flex items-center gap-1"
+                      <div className="space-y-6">
+                        {/* Selected Destinations Badges */}
+                        {selectedDestinations.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground">Selected destinations:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {selectedDestinations.map((destination) => (
+                                <Badge
+                                  key={destination.id}
+                                  variant="secondary"
+                                  className="pl-2 pr-1 py-1 flex items-center gap-1"
+                                >
+                                  {destination.name}
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      const newDestinations = form.getValues('destinations')
+                                        .filter(id => id !== String(destination.id));
+                                      form.setValue('destinations', newDestinations);
+                                    }}
+                                    className="hover:bg-muted rounded-full p-1"
                                   >
-                                    {destination.name}
-                                    <button
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        const newDestinations = form.getValues('destinations').filter(id => id !== destination.id);
-                                        form.setValue('destinations', newDestinations);
-                                      }}
-                                      className="hover:bg-muted rounded-full p-1"
-                                    >
-                                      <X className="h-3 w-3" />
-                                    </button>
-                                  </Badge>
-                                ))}
-                              </div>
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </Badge>
+                              ))}
                             </div>
-                          )}
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {recommendedDestinationsQuery.data?.slice(0, 4).map((destination) => (
-                              <DestinationCard
-                                key={destination.id}
-                                destination={destination}
-                                selected={form.watch("destinations").includes(String(destination.id))}
-                                onSelect={() => {
-                                  const currentDestinations = form.watch("destinations");
-                                  if (currentDestinations.includes(String(destination.id))) {
-                                    form.setValue(
-                                      "destinations",
-                                      currentDestinations.filter((id) => id !== String(destination.id))
-                                    );
-                                  } else {
-                                    form.setValue("destinations", [...currentDestinations, String(destination.id)]);
-                                  }
-                                }}
-                              />
-                            ))}
                           </div>
-                        </div>
-                        <div className="mt-6">
+                        )}
+
+                        {/* Destination Search */}
+                        <div>
                           <FormLabel>Search for destinations</FormLabel>
                           <Input
                             placeholder="Type to search destinations (min. 2 characters)..."
@@ -487,23 +459,23 @@ export default function Questionnaire() {
                           {searchStatus}
                           {destinationsQuery.data && destinationsQuery.data.length > 0 && (
                             <div className="border rounded-lg divide-y mt-4">
-                              {destinationsQuery.data.map((destination: Destination) => (
+                              {destinationsQuery.data.map((destination) => (
                                 <div
                                   key={destination.id}
                                   className={`flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 ${
-                                    field.value.includes(destination.id)
+                                    field.value.includes(String(destination.id))
                                       ? 'bg-primary/5'
                                       : ''
                                   }`}
                                   onClick={() => {
                                     const currentDestinations = field.value;
-                                    if (currentDestinations.includes(destination.id)) {
+                                    if (currentDestinations.includes(String(destination.id))) {
                                       form.setValue(
                                         'destinations',
-                                        currentDestinations.filter(id => id !== destination.id)
+                                        currentDestinations.filter(id => id !== String(destination.id))
                                       );
                                     } else {
-                                      form.setValue('destinations', [...currentDestinations, destination.id]);
+                                      form.setValue('destinations', [...currentDestinations, String(destination.id)]);
                                     }
                                   }}
                                 >
@@ -513,13 +485,46 @@ export default function Questionnaire() {
                                       <p className="text-xs text-muted-foreground mt-1">{destination.description}</p>
                                     )}
                                   </div>
-                                  {field.value.includes(destination.id) && (
+                                  {field.value.includes(String(destination.id)) && (
                                     <Check className="h-4 w-4 text-primary" />
                                   )}
                                 </div>
                               ))}
                             </div>
                           )}
+                        </div>
+
+                        {/* Recommended Destinations */}
+                        <div className="mt-8">
+                          <h4 className="text-md font-medium mb-2">
+                            {getCurrentSeason()
+                              ? `Best places to visit in ${getCurrentSeason()}`
+                              : "Popular destinations"}
+                          </h4>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Curated recommendations based on your selected time period
+                          </p>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {recommendedDestinationsQuery.data?.slice(0, 4).map((destination) => (
+                              <DestinationCard
+                                key={destination.id}
+                                destination={destination}
+                                selected={field.value.includes(String(destination.id))}
+                                onSelect={() => {
+                                  const currentDestinations = field.value;
+                                  if (currentDestinations.includes(String(destination.id))) {
+                                    form.setValue(
+                                      'destinations',
+                                      currentDestinations.filter(id => id !== String(destination.id))
+                                    );
+                                  } else {
+                                    form.setValue('destinations', [...currentDestinations, String(destination.id)]);
+                                  }
+                                }}
+                              />
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </FormControl>
