@@ -230,7 +230,11 @@ export default function Questionnaire() {
   });
 
   const onSubmit = (data: FormValues) => {
-    planMutation.mutate(data);
+    console.log("Submitting form data:", data);
+    planMutation.mutate({
+      ...data,
+      numberOfDays: data.numberOfDays || 7,
+    });
   };
 
   const nextStep = () => {

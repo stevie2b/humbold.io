@@ -13,7 +13,13 @@ export function registerRoutes(app: Express): Server {
         throw new Error("OpenAI API key is not configured");
       }
 
-      const plan = await generateTravelPlan(req.body);
+      const { numberOfDays, ...otherPreferences } = req.body;
+      console.log("Generating plan with preferences:", { numberOfDays, ...otherPreferences });
+
+      const plan = await generateTravelPlan({
+        numberOfDays: parseInt(numberOfDays) || 7,
+        ...otherPreferences
+      });
       res.json(plan);
     } catch (error) {
       console.error("Failed to generate travel plan:", error);
