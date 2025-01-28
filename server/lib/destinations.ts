@@ -16,7 +16,11 @@ async function initializeCities() {
 
     if (existingCities.length === 0) {
       console.log("Initializing cities database...");
-      await db.insert(destinations).values(MAJOR_CITIES);
+      await db.insert(destinations).values(MAJOR_CITIES.map(city => ({
+        ...city,
+        latitude: city.latitude.toString(),
+        longitude: city.longitude.toString(),
+      })));
     }
 
     citiesInitialized = true;
@@ -29,7 +33,22 @@ export async function searchDestinations(query: string) {
   try {
     await initializeCities();
 
-    // Search with case-insensitive partial matches on city name, country name, or the full name
+    // First, try to find an exact country match
+    const countryResults = await db.query.destinations.findMany({
+      where: (destinations) => ilike(destinations.countryName, query),
+      columns: {
+        id: true,
+        name: true,
+        countryName: true,
+      },
+    });
+
+    // If we found destinations for this country, return all of them
+    if (countryResults.length > 0) {
+      return countryResults;
+    }
+
+    // If no exact country match, perform the regular search
     const results = await db.query.destinations.findMany({
       where: (destinations, { or, ilike }) => or(
         ilike(destinations.name, `%${query}%`),
@@ -39,6 +58,7 @@ export async function searchDestinations(query: string) {
       columns: {
         id: true,
         name: true,
+        countryName: true,
       },
       limit: 10,
     });
