@@ -1,42 +1,87 @@
 import { createEvents, type EventAttributes } from "ics";
 
-interface ItineraryItem {
+interface ActivityItem {
+  time: string;
   title: string;
-  description: string;
-  startTime: string;
-  endTime: string;
-  location?: string;
 }
 
-export function generateICS(itinerary: ItineraryItem[]) {
-  const events: EventAttributes[] = itinerary.map((item) => {
-    const start = new Date(item.startTime);
-    const end = new Date(item.endTime);
-    
-    return {
-      title: item.title,
-      description: item.description,
-      location: item.location,
+interface DayItinerary {
+  day: number;
+  accommodation: {
+    title: string;
+    details: string;
+  };
+  transportation: {
+    title: string;
+    details: string;
+  };
+  activities: ActivityItem[];
+}
+
+export function generateICS(itinerary: DayItinerary[]) {
+  if (!itinerary || !Array.isArray(itinerary)) {
+    console.error('Invalid itinerary data');
+    return;
+  }
+
+  // Get the current date to use as a base for the itinerary
+  const baseDate = new Date();
+  baseDate.setHours(0, 0, 0, 0);
+
+  const events: EventAttributes[] = [];
+
+  itinerary.forEach((day, index) => {
+    const currentDate = new Date(baseDate);
+    currentDate.setDate(currentDate.getDate() + index);
+
+    // Add accommodation event
+    events.push({
+      title: day.accommodation.title,
+      description: day.accommodation.details,
       start: [
-        start.getFullYear(),
-        start.getMonth() + 1,
-        start.getDate(),
-        start.getHours(),
-        start.getMinutes(),
+        currentDate.getFullYear(),
+        currentDate.getMonth() + 1,
+        currentDate.getDate(),
+        9, // Default check-in time
+        0,
       ],
-      end: [
-        end.getFullYear(),
-        end.getMonth() + 1,
-        end.getDate(),
-        end.getHours(),
-        end.getMinutes(),
+      duration: { hours: 1 },
+    });
+
+    // Add transportation event
+    events.push({
+      title: day.transportation.title,
+      description: day.transportation.details,
+      start: [
+        currentDate.getFullYear(),
+        currentDate.getMonth() + 1,
+        currentDate.getDate(),
+        10, // Default transportation time
+        0,
       ],
-    };
+      duration: { hours: 1 },
+    });
+
+    // Add activities
+    day.activities.forEach((activity) => {
+      const [hours, minutes] = activity.time.split(':').map(Number);
+      events.push({
+        title: activity.title,
+        start: [
+          currentDate.getFullYear(),
+          currentDate.getMonth() + 1,
+          currentDate.getDate(),
+          hours || 12,
+          minutes || 0,
+        ],
+        duration: { hours: 2 }, // Default duration for activities
+      });
+    });
   });
 
   createEvents(events, (error, value) => {
     if (error) {
-      console.error(error);
+      console.error("Error generating ICS file:", error);
       return;
     }
 

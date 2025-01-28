@@ -25,8 +25,6 @@ interface TravelItineraryProps {
 export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
-    loop: false,
-    skipSnaps: false,
     dragFree: false,
   });
 
@@ -44,25 +42,27 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
   console.log("Rendering itinerary with length:", itinerary.length, "days:", itinerary);
 
   return (
-    <div className="relative w-full px-4">
+    <div className="relative w-full">
       {/* Navigation Buttons */}
-      <Button
-        variant="outline"
-        size="icon"
-        className="absolute -left-4 top-1/2 transform -translate-y-1/2 z-10 bg-background shadow-lg hidden md:flex"
-        onClick={scrollPrev}
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
+      <div className="hidden md:block">
+        <Button
+          variant="outline"
+          size="icon"
+          className="absolute -left-4 top-1/2 transform -translate-y-1/2 z-10 bg-background shadow-lg"
+          onClick={scrollPrev}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
 
-      <Button
-        variant="outline"
-        size="icon"
-        className="absolute -right-4 top-1/2 transform -translate-y-1/2 z-10 bg-background shadow-lg hidden md:flex"
-        onClick={scrollNext}
-      >
-        <ChevronRight className="h-4 w-4" />
-      </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="absolute -right-4 top-1/2 transform -translate-y-1/2 z-10 bg-background shadow-lg"
+          onClick={scrollNext}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
 
       {/* Mobile Navigation */}
       <div className="flex justify-between mb-4 md:hidden">
@@ -78,11 +78,15 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
 
       {/* Carousel Container */}
       <div className="overflow-hidden" ref={emblaRef}>
-        <div className="flex gap-4">
+        <div className="flex gap-4 ml-0">
           {itinerary.map((day) => (
             <div 
               key={day.day}
-              className="w-full md:w-[calc(50%-8px)] lg:w-[calc(33.333%-12px)] min-w-0 flex-shrink-0"
+              style={{ 
+                flex: '0 0 auto',
+                minWidth: '300px',
+                width: 'calc((100% - 32px) / 3)'
+              }}
             >
               <TravelDayCard {...day} />
             </div>
