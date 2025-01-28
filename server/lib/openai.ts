@@ -30,7 +30,6 @@ function generateBasicItinerary(preferences: {
   activities: string[];
   numberOfDays: number;
 }): TravelPlan {
-  const startDate = preferences.specificDate || new Date();
   const numDays = preferences.numberOfDays || 3;
 
   // Generate a basic itinerary for the specified number of days
@@ -127,7 +126,42 @@ export async function generateTravelPlan(preferences: {
       return generateBasicItinerary(preferences);
     }
 
-    return JSON.parse(response.choices[0].message.content) as TravelPlan;
+    const result = JSON.parse(response.choices[0].message.content) as TravelPlan;
+
+    // Ensure we have the correct number of days
+    if (result.itinerary.length < preferences.numberOfDays) {
+      const remaining = preferences.numberOfDays - result.itinerary.length;
+      for (let i = 0; i < remaining; i++) {
+        const day = result.itinerary.length + 1;
+        result.itinerary.push({
+          day,
+          accommodation: {
+            title: "Hotel Stay",
+            details: `Continued stay in ${preferences.destination}`
+          },
+          transportation: {
+            title: "Local Transport",
+            details: "Local transit and walking"
+          },
+          activities: [
+            {
+              time: "10:00",
+              title: `Day ${day} Exploration`
+            },
+            {
+              time: "14:00",
+              title: "Local Cuisine Experience"
+            },
+            {
+              time: "16:00",
+              title: "Cultural Activities"
+            }
+          ]
+        });
+      }
+    }
+
+    return result;
   } catch (error: any) {
     console.error("Error generating travel plan:", error);
     console.log("Using fallback due to OpenAI error");
