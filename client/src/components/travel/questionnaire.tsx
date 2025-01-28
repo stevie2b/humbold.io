@@ -89,6 +89,7 @@ export default function Questionnaire() {
 
   const hasSelectedDates = !!(form.watch("startDate") && form.watch("endDate"));
   const hasSelectedSeason = !!form.watch("season");
+  const hasValidTimeSelection = hasSelectedDates || hasSelectedSeason;
 
   return (
     <Form {...form}>
@@ -97,7 +98,7 @@ export default function Questionnaire() {
           <Card>
             <CardContent className="pt-6">
               <div className="space-y-6">
-                <div 
+                <div
                   className={`space-y-4 ${hasSelectedSeason ? "opacity-50" : ""}`}
                   onClick={() => {
                     if (hasSelectedSeason) {
@@ -116,8 +117,8 @@ export default function Questionnaire() {
                           <FormLabel>Start Date</FormLabel>
                           <Popover>
                             <PopoverTrigger asChild>
-                              <Button 
-                                variant="outline" 
+                              <Button
+                                variant="outline"
                                 disabled={hasSelectedSeason}
                               >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
@@ -153,7 +154,7 @@ export default function Questionnaire() {
                           <FormLabel>End Date</FormLabel>
                           <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
                             <PopoverTrigger asChild>
-                              <Button 
+                              <Button
                                 variant="outline"
                                 disabled={hasSelectedSeason}
                               >
@@ -182,7 +183,7 @@ export default function Questionnaire() {
                   </div>
                 </div>
 
-                <div 
+                <div
                   className={`space-y-4 ${hasSelectedDates ? "opacity-50" : ""}`}
                   onClick={() => {
                     if (hasSelectedDates) {
@@ -214,8 +215,8 @@ export default function Questionnaire() {
                             {SEASONS.map((season) => (
                               <div key={season.value} className="flex items-center space-x-2">
                                 <RadioGroupItem value={season.value} id={season.value} />
-                                <label 
-                                  htmlFor={season.value} 
+                                <label
+                                  htmlFor={season.value}
                                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                                 >
                                   {season.label}
@@ -327,7 +328,11 @@ export default function Questionnaire() {
             </Button>
           )}
           {step < 4 ? (
-            <Button type="button" onClick={nextStep}>
+            <Button
+              type="button"
+              onClick={nextStep}
+              disabled={step === 1 && !hasValidTimeSelection}
+            >
               Next
             </Button>
           ) : (
