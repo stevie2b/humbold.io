@@ -40,6 +40,14 @@ export default function Questionnaire() {
 
   const destinationsQuery = useQuery({
     queryKey: ["/api/destinations/search", searchQuery],
+    queryFn: async ({ queryKey }) => {
+      const [_, query] = queryKey;
+      const response = await fetch(`/api/destinations/search?q=${encodeURIComponent(query)}`);
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+      return response.json();
+    },
     enabled: !!searchQuery && searchQuery.length > 2,
   });
 

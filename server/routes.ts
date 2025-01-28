@@ -17,8 +17,8 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/destinations/search", async (req, res) => {
     try {
       const { q } = req.query;
-      if (!q || typeof q !== "string") {
-        return res.status(400).json({ message: "Search query is required" });
+      if (!q || typeof q !== "string" || q.length < 2) {
+        return res.status(400).json({ message: "Search query must be at least 2 characters" });
       }
 
       const results = await searchDestinations(q);

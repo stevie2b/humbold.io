@@ -1,6 +1,6 @@
 import { db } from "@db";
 import { destinations, type InsertDestination } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { eq, like } from "drizzle-orm";
 
 const OPENTRIPMAP_API_KEY = process.env.OPENTRIPMAP_API_KEY;
 const BASE_URL = "https://api.opentripmap.com/0.1";
@@ -38,6 +38,8 @@ interface OpenTripMapPlaceDetails {
 
 export async function searchDestinations(query: string) {
   try {
+    console.log("Searching for destinations with query:", query);
+
     // First check our database
     const cachedResults = await db.query.destinations.findMany({
       where: (destinations, { like }) =>
@@ -46,6 +48,7 @@ export async function searchDestinations(query: string) {
     });
 
     if (cachedResults.length > 0) {
+      console.log("Found cached results:", cachedResults.length);
       return cachedResults;
     }
 
@@ -55,10 +58,16 @@ export async function searchDestinations(query: string) {
     );
 
     if (!response.ok) {
+      console.error("OpenTripMap API error:", response.status, await response.text());
       throw new Error("Failed to fetch destinations");
     }
 
     const places: OpenTripMapPlace[] = await response.json();
+    console.log("Fetched places from API:", places.length);
+
+    if (!places.length) {
+      return [];
+    }
 
     // Fetch detailed information for each place
     const detailedPlaces = await Promise.all(
@@ -87,12 +96,15 @@ export async function searchDestinations(query: string) {
     }));
 
     // Insert into database
-    await db.insert(destinations).values(destinationsToInsert);
+    if (destinationsToInsert.length > 0) {
+      console.log("Inserting new destinations:", destinationsToInsert.length);
+      await db.insert(destinations).values(destinationsToInsert);
+    }
 
     return destinationsToInsert;
   } catch (error) {
     console.error("Error searching destinations:", error);
-    throw new Error("Failed to search destinations");
+    throw error;
   }
 }
 
