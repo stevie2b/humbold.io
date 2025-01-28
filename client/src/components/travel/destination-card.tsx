@@ -13,6 +13,8 @@ interface DestinationCardProps {
 }
 
 export default function DestinationCard({ destination, selected, onSelect }: DestinationCardProps) {
+  const { name, description, image } = destination;
+
   return (
     <motion.div
       whileHover={{ scale: 1.02 }}
@@ -27,10 +29,13 @@ export default function DestinationCard({ destination, selected, onSelect }: Des
         <CardContent className="p-4">
           <div
             className="w-full h-48 rounded-lg bg-cover bg-center mb-4"
-            style={{ backgroundImage: `url(${destination.image})` }}
+            style={{ 
+              backgroundImage: `url(${image})`,
+              backgroundColor: '#f3f4f6' // Fallback color
+            }}
           />
-          <h3 className="font-semibold text-lg mb-2">{destination.name}</h3>
-          <p className="text-sm text-gray-600">{destination.description}</p>
+          <h3 className="font-semibold text-lg mb-2">{name}</h3>
+          <p className="text-sm text-gray-600">{description}</p>
         </CardContent>
       </Card>
     </motion.div>

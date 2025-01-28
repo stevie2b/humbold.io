@@ -18,6 +18,13 @@ import { generateICS } from "@/lib/ics-generator";
 import DestinationCard from "./destination-card";
 import { Input } from "@/components/ui/input";
 
+interface Destination {
+  id: string;
+  name: string;
+  description: string | null;
+  imageUrl: string | null;
+}
+
 const formSchema = z.object({
   startDate: z.date().optional(),
   endDate: z.date().optional(),
@@ -58,7 +65,13 @@ export default function Questionnaire() {
           });
           throw new Error(errorText);
         }
-        return response.json();
+        const data = await response.json();
+        return (data || []).map((dest: any) => ({
+          id: String(dest.id || ''),
+          name: dest.name || 'Unknown Destination',
+          description: dest.description || 'No description available',
+          imageUrl: dest.imageUrl || 'https://via.placeholder.com/400x300',
+        }));
       } catch (error) {
         console.error("Search error:", error);
         return [];
@@ -339,7 +352,6 @@ export default function Questionnaire() {
               <h3 className="text-lg font-semibold mb-4">Where would you like to go?</h3>
 
               <div className="mb-6">
-                {/* Update the destinations section UI */}
                 <FormField
                   control={form.control}
                   name="destinations"
@@ -356,22 +368,24 @@ export default function Questionnaire() {
                           {searchStatus}
                           {destinationsQuery.data && destinationsQuery.data.length > 0 && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              {destinationsQuery.data.map((destination: any) => (
+                              {destinationsQuery.data.map((destination: Destination) => (
                                 <DestinationCard
                                   key={destination.id}
                                   destination={{
-                                    id: destination.id.toString(),
+                                    id: destination.id,
                                     name: destination.name,
-                                    description: destination.description || "No description available",
-                                    image: destination.imageUrl || "https://via.placeholder.com/400x300",
+                                    description: destination.description || 'No description available',
+                                    image: destination.imageUrl || 'https://via.placeholder.com/400x300',
                                   }}
-                                  selected={field.value.includes(destination.id.toString())}
+                                  selected={form.watch('destinations').includes(destination.id)}
                                   onSelect={() => {
-                                    const currentDestinations = field.value;
-                                    if (currentDestinations.includes(destination.id.toString())) {
-                                      field.onChange(currentDestinations.filter(id => id !== destination.id.toString()));
+                                    const currentDestinations = form.watch('destinations');
+                                    if (currentDestinations.includes(destination.id)) {
+                                      form.setValue('destinations', 
+                                        currentDestinations.filter(id => id !== destination.id)
+                                      );
                                     } else {
-                                      field.onChange([...currentDestinations, destination.id.toString()]);
+                                      form.setValue('destinations', [...currentDestinations, destination.id]);
                                     }
                                   }}
                                 />
