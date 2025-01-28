@@ -5,6 +5,7 @@ import { searchDestinations } from "./lib/destinations";
 import { db } from "@db";
 import { destinations } from "@db/schema";
 import { sql } from "drizzle-orm";
+import { MAJOR_CITIES } from "./lib/cities-data";
 
 export function registerRoutes(app: Express): Server {
   app.post("/api/plan", async (req, res) => {
@@ -52,19 +53,36 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ message: "Season parameter is required" });
       }
 
-      const results = await db.query.destinations.findMany({
-        orderBy: [
-          sql`(seasonal_ratings->>'${sql.raw(season)}')::numeric DESC`,
-          sql`name ASC`
-        ],
-        limit: 8,
-      });
+      try {
+        const results = await db.query.destinations.findMany({
+          orderBy: [
+            sql`(seasonal_ratings->>'${sql.raw(season)}')::numeric DESC`,
+            sql`name ASC`
+          ],
+          limit: 8,
+        });
 
-      const uniqueResults = Array.from(
-        new Map(results.map(item => [item.name, item])).values()
-      ).slice(0, 4);
+        if (results.length === 0) {
+          // Fallback to default recommendations if no database results
+          const defaultRecommendations = MAJOR_CITIES
+            .sort((a, b) => b.seasonalRatings[season] - a.seasonalRatings[season])
+            .slice(0, 4);
+          return res.json(defaultRecommendations);
+        }
 
-      res.json(uniqueResults);
+        const uniqueResults = Array.from(
+          new Map(results.map(item => [item.name, item])).values()
+        ).slice(0, 4);
+
+        res.json(uniqueResults);
+      } catch (dbError) {
+        console.error("Database error, using fallback recommendations:", dbError);
+        // Fallback to hardcoded recommendations
+        const fallbackRecommendations = MAJOR_CITIES
+          .sort((a, b) => b.seasonalRatings[season] - a.seasonalRatings[season])
+          .slice(0, 4);
+        res.json(fallbackRecommendations);
+      }
     } catch (error) {
       console.error("Failed to get recommended destinations:", error);
       res.status(500).json({ message: "Failed to get recommended destinations" });

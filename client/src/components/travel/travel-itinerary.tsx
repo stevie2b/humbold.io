@@ -27,8 +27,8 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
     align: "start",
     slidesToScroll: 1,
     breakpoints: {
-      "(min-width: 1024px)": { slidesToScroll: 5 },
-      "(min-width: 768px)": { slidesToScroll: 3 },
+      "(min-width: 1024px)": { slidesToScroll: 4 },
+      "(min-width: 768px)": { slidesToScroll: 2 },
       "(max-width: 767px)": { slidesToScroll: 1 },
     }
   });
@@ -80,7 +80,7 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
           {itinerary.map((day, index) => (
             <div 
               key={day.day}
-              className="flex-[0_0_100%] min-w-0 pl-4 md:flex-[0_0_33.33%] lg:flex-[0_0_20%]"
+              className="flex-[0_0_100%] min-w-0 pl-4 md:flex-[0_0_50%] lg:flex-[0_0_25%]"
             >
               <TravelDayCard {...day} />
             </div>
