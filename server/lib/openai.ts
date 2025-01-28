@@ -28,19 +28,21 @@ function generateBasicItinerary(preferences: {
   destination: string;
   travelerType: string;
   activities: string[];
+  numberOfDays: number;
 }): TravelPlan {
   const startDate = preferences.specificDate || new Date();
+  const numDays = preferences.numberOfDays || 3;
 
-  // Generate a basic 3-day itinerary
-  const itinerary = Array.from({ length: 3 }, (_, i) => ({
+  // Generate a basic itinerary for the specified number of days
+  const itinerary = Array.from({ length: numDays }, (_, i) => ({
     day: i + 1,
     accommodation: {
       title: "Hotel Check-in/Stay",
       details: `Comfortable accommodation in ${preferences.destination}`
     },
     transportation: {
-      title: i === 0 ? "Arrival" : i === 2 ? "Departure" : "Local Transport",
-      details: i === 0 ? "Airport Transfer" : i === 2 ? "Airport Transfer" : "Walking and local transit"
+      title: i === 0 ? "Arrival" : i === numDays - 1 ? "Departure" : "Local Transport",
+      details: i === 0 ? "Airport Transfer" : i === numDays - 1 ? "Airport Transfer" : "Walking and local transit"
     },
     activities: [
       {
@@ -53,7 +55,7 @@ function generateBasicItinerary(preferences: {
       },
       {
         time: "16:00",
-        title: i === 2 ? "Prepare for Departure" : "Explore Local Attractions"
+        title: i === numDays - 1 ? "Prepare for Departure" : "Explore Local Attractions"
       }
     ]
   }));
@@ -74,6 +76,7 @@ export async function generateTravelPlan(preferences: {
   destination: string;
   travelerType: string;
   activities: string[];
+  numberOfDays: number;
 }): Promise<TravelPlan> {
   try {
     if (!process.env.OPENAI_API_KEY) {
@@ -81,12 +84,13 @@ export async function generateTravelPlan(preferences: {
       return generateBasicItinerary(preferences);
     }
 
-    const prompt = `Generate a detailed travel itinerary based on these preferences:
+    const prompt = `Generate a detailed ${preferences.numberOfDays}-day travel itinerary based on these preferences:
       Season: ${preferences.season}
       ${preferences.specificDate ? `Specific Date: ${preferences.specificDate}` : ''}
       Destination: ${preferences.destination}
       Traveler Type: ${preferences.travelerType}
       Activities: ${preferences.activities.join(', ')}
+      Number of Days: ${preferences.numberOfDays}
 
       Please provide the response in this JSON format:
       {

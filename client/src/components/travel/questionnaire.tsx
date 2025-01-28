@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import DestinationCard from "./destination-card";
 import TravelItinerary from "./travel-itinerary";
+import { Slider } from "@/components/ui/slider";
 
 interface Destination {
   id: number;
@@ -46,6 +47,7 @@ const formSchema = z.object({
   travelerType: z.string(),
   activities: z.array(z.string()).min(1),
   customActivity: z.string().optional(),
+  numberOfDays: z.number().min(2).max(30),
 }).refine((data) => {
   return (data.startDate && data.endDate) || data.season;
 }, {
@@ -68,6 +70,7 @@ export default function Questionnaire() {
       destinations: [],
       activities: [],
       customActivity: "",
+      numberOfDays: 7, //added default value
     },
   });
 
@@ -427,6 +430,35 @@ export default function Questionnaire() {
                       </FormItem>
                     )}
                   />
+
+                  {/* Add number of days slider */}
+                  <div className="pt-6">
+                    <h3 className="text-lg font-semibold mb-4">Number of Days</h3>
+                    <FormField
+                      control={form.control}
+                      name="numberOfDays"
+                      defaultValue={7}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <div className="space-y-4">
+                              <Slider
+                                min={2}
+                                max={30}
+                                step={1}
+                                value={[field.value]}
+                                onValueChange={(value) => field.onChange(value[0])}
+                                className="w-full"
+                              />
+                              <p className="text-sm text-muted-foreground text-center">
+                                {field.value} days
+                              </p>
+                            </div>
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
               </div>
             </CardContent>
