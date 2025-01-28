@@ -95,7 +95,7 @@ export default function Questionnaire() {
         }
         const data = await response.json();
         return (data || []).map((dest: any) => ({
-          id: dest.id,
+          id: dest.id || Math.floor(Math.random() * 1000000), // Ensure ID exists
           name: dest.name || 'Unknown Destination',
           description: dest.description,
           seasonalRatings: dest.seasonalRatings || {
@@ -103,7 +103,8 @@ export default function Questionnaire() {
             summer: 0,
             autumn: 0,
             winter: 0
-          }
+          },
+          imageUrl: dest.imageUrl
         }));
       } catch (error) {
         console.error("Search error:", error);

@@ -68,13 +68,17 @@ export async function searchDestinations(query: string) {
     // Remove duplicates and ensure proper format
     const uniqueResults = Array.from(
       new Map(results.map(dest => [dest.name, {
-        ...dest,
+        id: dest.id || Math.floor(Math.random() * 1000000), // Ensure ID exists
+        name: dest.name,
+        countryName: dest.countryName,
+        description: dest.description,
         seasonalRatings: dest.seasonalRatings || {
           spring: 0,
           summer: 0,
           autumn: 0,
           winter: 0
-        }
+        },
+        imageUrl: dest.imageUrl
       }])).values()
     );
 
@@ -86,7 +90,7 @@ export async function searchDestinations(query: string) {
       city.name.toLowerCase().includes(query.toLowerCase()) ||
       city.countryName.toLowerCase().includes(query.toLowerCase())
     ).slice(0, 10).map(city => ({
-      id: city.id,
+      id: city.id || Math.floor(Math.random() * 1000000), // Ensure ID exists
       name: city.name,
       countryName: city.countryName,
       description: city.description,
