@@ -18,83 +18,80 @@ interface DayItinerary {
   activities: ActivityItem[];
 }
 
-export function generateICS(itinerary: DayItinerary[]) {
+export function generateICS(itinerary: DayItinerary[]): Promise<string> {
   if (!itinerary || !Array.isArray(itinerary)) {
-    console.error('Invalid itinerary data');
-    return;
+    return Promise.reject('Invalid itinerary data');
   }
 
-  // Get the current date to use as a base for the itinerary
-  const baseDate = new Date();
-  baseDate.setHours(0, 0, 0, 0);
+  return new Promise((resolve, reject) => {
+    // Get the current date to use as a base for the itinerary
+    const baseDate = new Date();
+    baseDate.setHours(0, 0, 0, 0);
 
-  const events: EventAttributes[] = [];
+    const events: EventAttributes[] = [];
 
-  itinerary.forEach((day, index) => {
-    const currentDate = new Date(baseDate);
-    currentDate.setDate(currentDate.getDate() + index);
+    itinerary.forEach((day, index) => {
+      const currentDate = new Date(baseDate);
+      currentDate.setDate(currentDate.getDate() + index);
 
-    // Add accommodation event
-    events.push({
-      title: day.accommodation.title,
-      description: day.accommodation.details,
-      start: [
-        currentDate.getFullYear(),
-        currentDate.getMonth() + 1,
-        currentDate.getDate(),
-        9, // Default check-in time
-        0,
-      ],
-      duration: { hours: 1 },
-    });
-
-    // Add transportation event
-    events.push({
-      title: day.transportation.title,
-      description: day.transportation.details,
-      start: [
-        currentDate.getFullYear(),
-        currentDate.getMonth() + 1,
-        currentDate.getDate(),
-        10, // Default transportation time
-        0,
-      ],
-      duration: { hours: 1 },
-    });
-
-    // Add activities
-    day.activities.forEach((activity) => {
-      const [hours, minutes] = activity.time.split(':').map(Number);
+      // Add accommodation event
       events.push({
-        title: activity.title,
+        title: day.accommodation.title,
+        description: day.accommodation.details,
         start: [
           currentDate.getFullYear(),
           currentDate.getMonth() + 1,
           currentDate.getDate(),
-          hours || 12,
-          minutes || 0,
+          9, // Default check-in time
+          0,
         ],
-        duration: { hours: 2 }, // Default duration for activities
+        duration: { hours: 1 },
+      });
+
+      // Add transportation event
+      events.push({
+        title: day.transportation.title,
+        description: day.transportation.details,
+        start: [
+          currentDate.getFullYear(),
+          currentDate.getMonth() + 1,
+          currentDate.getDate(),
+          10, // Default transportation time
+          0,
+        ],
+        duration: { hours: 1 },
+      });
+
+      // Add activities
+      day.activities.forEach((activity) => {
+        const [hours, minutes] = activity.time.split(':').map(Number);
+        events.push({
+          title: activity.title,
+          start: [
+            currentDate.getFullYear(),
+            currentDate.getMonth() + 1,
+            currentDate.getDate(),
+            hours || 12,
+            minutes || 0,
+          ],
+          duration: { hours: 2 }, // Default duration for activities
+        });
       });
     });
-  });
 
-  createEvents(events, (error, value) => {
-    if (error) {
-      console.error("Error generating ICS file:", error);
-      return;
-    }
+    createEvents(events, (error, value) => {
+      if (error) {
+        reject(error);
+        return;
+      }
 
-    if (value) {
-      const blob = new Blob([value], { type: 'text/calendar' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'travel-itinerary.ics';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    }
+      if (value) {
+        const blob = new Blob([value], { type: 'text/calendar' });
+        const url = URL.createObjectURL(blob);
+        resolve(url);
+      } else {
+        reject(new Error('Failed to create ICS file'));
+      }
+    });
   });
 }

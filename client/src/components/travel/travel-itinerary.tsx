@@ -26,6 +26,7 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     dragFree: false,
+    containScroll: "trimSnaps",
   });
 
   const scrollPrev = useCallback(() => {
@@ -37,9 +38,6 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
   }, [emblaApi]);
 
   if (!itinerary?.length) return null;
-
-  // Debug log to check the itinerary data
-  console.log("Rendering itinerary with length:", itinerary.length, "days:", itinerary);
 
   return (
     <div className="relative w-full">
@@ -78,7 +76,7 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
 
       {/* Carousel Container */}
       <div className="overflow-hidden" ref={emblaRef}>
-        <div className="flex gap-4 ml-0">
+        <div className="flex gap-4">
           {itinerary.map((day) => (
             <div 
               key={day.day}
