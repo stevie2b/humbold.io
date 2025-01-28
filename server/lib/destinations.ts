@@ -33,7 +33,7 @@ export async function searchDestinations(query: string) {
   try {
     await initializeCities();
 
-    // First, try to find exact country matches (where name equals country name)
+    // First, try to find exact country matches
     const countryResults = await db.query.destinations.findMany({
       where: (destinations) => 
         eq(destinations.name, destinations.countryName) &&
@@ -52,22 +52,27 @@ export async function searchDestinations(query: string) {
     }
 
     // Otherwise, perform the regular search
-    const results = await db.query.destinations.findMany({
-      where: (destinations, { or, ilike }) => or(
-        ilike(destinations.name, `%${query}%`),
-        ilike(destinations.cityName, `%${query}%`),
-        ilike(destinations.countryName, `%${query}%`)
-      ),
+    const nonCountryResults = await db.query.destinations.findMany({
+      where: (destinations) => 
+        or(
+          ilike(destinations.name, `%${query}%`),
+          ilike(destinations.cityName, `%${query}%`),
+          ilike(destinations.countryName, `%${query}%`)
+        ),
       columns: {
         id: true,
         name: true,
         countryName: true,
         description: true,
       },
-      limit: 10,
     });
 
-    return results;
+    // Remove duplicates based on name
+    const uniqueResults = nonCountryResults.filter((dest, index, self) =>
+      index === self.findIndex((d) => d.name === dest.name)
+    );
+
+    return uniqueResults.slice(0, 10); // Limit to 10 results
   } catch (error) {
     console.error("Error searching destinations:", error);
     throw error;

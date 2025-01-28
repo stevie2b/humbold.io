@@ -17,10 +17,13 @@ import { SEASONS, TRAVELER_TYPES, ACTIVITIES } from "@/lib/constants";
 import { generateICS } from "@/lib/ics-generator";
 import { Input } from "@/components/ui/input";
 import { Check } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
 
 interface Destination {
   id: string;
   name: string;
+  description?: string;
 }
 
 const formSchema = z.object({
@@ -66,6 +69,7 @@ export default function Questionnaire() {
         return (data || []).map((dest: any) => ({
           id: String(dest.id || ''),
           name: dest.name || 'Unknown Destination',
+          description: dest.description,
         }));
       } catch (error) {
         console.error("Search error:", error);
@@ -359,6 +363,33 @@ export default function Questionnaire() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                           />
                           {searchStatus}
+                          {field.value.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-4">
+                              {field.value.map((destId) => {
+                                const destination = destinationsQuery.data?.find(d => d.id === destId);
+                                if (!destination) return null;
+                                return (
+                                  <Badge
+                                    key={destId}
+                                    variant="secondary"
+                                    className="pl-2 pr-1 py-1 flex items-center gap-1"
+                                  >
+                                    {destination.name}
+                                    <button
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        const newDestinations = field.value.filter(id => id !== destId);
+                                        form.setValue('destinations', newDestinations);
+                                      }}
+                                      className="hover:bg-muted rounded-full p-1"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </Badge>
+                                );
+                              })}
+                            </div>
+                          )}
                           {destinationsQuery.data && destinationsQuery.data.length > 0 && (
                             <div className="border rounded-lg divide-y">
                               {destinationsQuery.data.map((destination: Destination) => (
@@ -381,7 +412,12 @@ export default function Questionnaire() {
                                     }
                                   }}
                                 >
-                                  <span className="text-sm">{destination.name}</span>
+                                  <div>
+                                    <span className="text-sm font-medium">{destination.name}</span>
+                                    {destination.description && (
+                                      <p className="text-xs text-muted-foreground mt-1">{destination.description}</p>
+                                    )}
+                                  </div>
                                   {form.watch('destinations').includes(destination.id) && (
                                     <Check className="h-4 w-4 text-primary" />
                                   )}
