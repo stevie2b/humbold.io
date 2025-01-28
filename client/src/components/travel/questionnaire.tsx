@@ -34,11 +34,8 @@ interface Destination {
   };
 }
 
-interface SelectedDestination extends Destination {
-  id: string;
-  name: string;
-  description?: string;
-}
+// Now SelectedDestination is the same as Destination
+type SelectedDestination = Destination;
 
 const formSchema = z.object({
   startDate: z.date().optional(),
@@ -94,9 +91,15 @@ export default function Questionnaire() {
         }
         const data = await response.json();
         return (data || []).map((dest: any) => ({
-          id: String(dest.id || ''),
+          id: dest.id,
           name: dest.name || 'Unknown Destination',
           description: dest.description,
+          seasonalRatings: dest.seasonalRatings || {
+            spring: 0,
+            summer: 0,
+            autumn: 0,
+            winter: 0
+          }
         }));
       } catch (error) {
         console.error("Search error:", error);
@@ -106,25 +109,74 @@ export default function Questionnaire() {
     enabled: !!searchQuery && searchQuery.length > 2,
   });
 
+  const getCurrentSeason = () => {
+    if (form.watch("season")) {
+      return form.watch("season");
+    }
+    if (form.watch("startDate")) {
+      const date = new Date(form.watch("startDate")!);
+      const month = date.getMonth();
+      if (month >= 2 && month <= 4) return "spring";
+      if (month >= 5 && month <= 7) return "summer";
+      if (month >= 8 && month <= 10) return "autumn";
+      return "winter";
+    }
+    return null;
+  };
+
+  const recommendedDestinationsQuery = useQuery({
+    queryKey: ["/api/destinations/recommended", getCurrentSeason()],
+    queryFn: async () => {
+      const season = getCurrentSeason();
+      if (!season) return [];
+
+      try {
+        const response = await fetch(`/api/destinations/recommended?season=${season}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch recommended destinations");
+        }
+        const data = await response.json();
+        return data as Destination[];
+      } catch (error) {
+        console.error("Error fetching recommended destinations:", error);
+        return [];
+      }
+    },
+    enabled: !!getCurrentSeason(),
+  });
+
   useEffect(() => {
     const formDestinations = form.watch("destinations");
-    const allDestinations = destinationsQuery.data || [];
+    const allDestinations = [
+      ...(destinationsQuery.data || []),
+      ...(recommendedDestinationsQuery.data || [])
+    ];
 
     setSelectedDestinations(prevSelected => {
       const newSelected = [...prevSelected];
 
+      // Filter out any destinations that are no longer selected
+      const filtered = newSelected.filter(dest => 
+        formDestinations.includes(String(dest.id))
+      );
+
+      // Add any newly selected destinations
       formDestinations.forEach(destId => {
-        if (!newSelected.find(d => d.id === destId)) {
-          const dest = allDestinations.find(d => d.id === destId);
+        if (!filtered.find(d => String(d.id) === destId)) {
+          const dest = allDestinations.find(d => String(d.id) === destId);
           if (dest) {
-            newSelected.push(dest);
+            filtered.push(dest);
           }
         }
       });
 
-      return newSelected.filter(dest => formDestinations.includes(dest.id));
+      return filtered;
     });
-  }, [form.watch("destinations"), destinationsQuery.data]);
+  }, [
+    form.watch("destinations"), 
+    destinationsQuery.data,
+    recommendedDestinationsQuery.data
+  ]);
 
   const searchStatus = destinationsQuery.status === "pending" ? (
     <p className="text-sm text-muted-foreground">Searching...</p>
@@ -211,41 +263,6 @@ export default function Questionnaire() {
   const hasSelectedSeason = !!form.watch("season");
   const hasValidTimeSelection = hasSelectedDates || hasSelectedSeason;
 
-  const getCurrentSeason = () => {
-    if (form.watch("season")) {
-      return form.watch("season");
-    }
-    if (form.watch("startDate")) {
-      const date = new Date(form.watch("startDate")!);
-      const month = date.getMonth();
-      if (month >= 2 && month <= 4) return "spring";
-      if (month >= 5 && month <= 7) return "summer";
-      if (month >= 8 && month <= 10) return "autumn";
-      return "winter";
-    }
-    return null;
-  };
-
-  const recommendedDestinationsQuery = useQuery({
-    queryKey: ["/api/destinations/recommended", getCurrentSeason()],
-    queryFn: async () => {
-      const season = getCurrentSeason();
-      if (!season) return [];
-
-      try {
-        const response = await fetch(`/api/destinations/recommended?season=${season}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch recommended destinations");
-        }
-        const data = await response.json();
-        return data as Destination[];
-      } catch (error) {
-        console.error("Error fetching recommended destinations:", error);
-        return [];
-      }
-    },
-    enabled: !!getCurrentSeason(),
-  });
 
   return (
     <Form {...form}>
