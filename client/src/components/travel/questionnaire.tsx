@@ -9,7 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Card, CardContent } from "@/components/ui/card";
-import { format, differenceInDays } from "date-fns";
+import { format, differenceInDays, addMonths, endOfMonth } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -26,7 +26,6 @@ interface Destination {
   description?: string;
 }
 
-// Add a new interface for selected destinations
 interface SelectedDestination extends Destination {
   id: string;
   name: string;
@@ -52,6 +51,7 @@ type FormValues = z.infer<typeof formSchema>;
 export default function Questionnaire() {
   const [step, setStep] = useState(1);
   const [endDateOpen, setEndDateOpen] = useState(false);
+  const [endDateDefaultMonth, setEndDateDefaultMonth] = useState<Date | undefined>();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDestinations, setSelectedDestinations] = useState<SelectedDestination[]>([]);
   const { toast } = useToast();
@@ -98,16 +98,13 @@ export default function Questionnaire() {
     enabled: !!searchQuery && searchQuery.length > 2,
   });
 
-  // Effect to update selectedDestinations when form values change
   useEffect(() => {
     const formDestinations = form.watch("destinations");
     const allDestinations = destinationsQuery.data || [];
 
-    // Update selected destinations while preserving existing ones
     setSelectedDestinations(prevSelected => {
       const newSelected = [...prevSelected];
 
-      // Add any new destinations that aren't in the selection
       formDestinations.forEach(destId => {
         if (!newSelected.find(d => d.id === destId)) {
           const dest = allDestinations.find(d => d.id === destId);
@@ -117,7 +114,6 @@ export default function Questionnaire() {
         }
       });
 
-      // Remove any destinations that aren't in form values anymore
       return newSelected.filter(dest => formDestinations.includes(dest.id));
     });
   }, [form.watch("destinations"), destinationsQuery.data]);
@@ -265,12 +261,16 @@ export default function Questionnaire() {
                                     onSelect={(date) => {
                                       field.onChange(date);
                                       if (date) {
+                                        const daysUntilMonthEnd = differenceInDays(endOfMonth(date), date);
+                                        if (daysUntilMonthEnd <= 7) {
+                                          setEndDateDefaultMonth(addMonths(date, 1));
+                                        } else {
+                                          setEndDateDefaultMonth(undefined);
+                                        }
                                         setEndDateOpen(true);
                                       }
                                     }}
-                                    disabled={(date) =>
-                                      date < new Date() || date > new Date(2025, 11, 31)
-                                    }
+                                    disabled={(date) => date < new Date() || date > new Date(2025, 11, 31)}
                                   />
                                 </PopoverContent>
                               </Popover>
@@ -303,6 +303,7 @@ export default function Questionnaire() {
                                   <Calendar
                                     mode="single"
                                     selected={field.value}
+                                    defaultMonth={endDateDefaultMonth}
                                     onSelect={(date) => {
                                       field.onChange(date);
                                       setEndDateOpen(false);
