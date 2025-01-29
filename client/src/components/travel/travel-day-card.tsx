@@ -15,13 +15,15 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 
-// Add LocationSearch component for reusability
+// Only modifying the LocationSearch component
 function LocationSearch({ 
   onLocationSelect,
-  initialAddress = "" 
+  initialAddress = "",
+  searchType = "" // Add searchType parameter
 }: { 
   onLocationSelect: (location: { lat: number; lng: number; address: string }) => void;
   initialAddress?: string;
+  searchType?: string; // Optional parameter for specific place types (e.g., "restaurant", "entertainment")
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -37,8 +39,10 @@ function LocationSearch({
     setIsSearching(true);
     try {
       const token = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+      // Add the type of place to the search query if provided
+      const searchText = searchType ? `${query} ${searchType}` : query;
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchText)}.json?access_token=${token}&types=poi`
       );
       const data = await response.json();
       setSearchResults(data.features || []);
@@ -54,7 +58,7 @@ function LocationSearch({
       <Label>Search Location</Label>
       <div className="flex gap-2">
         <Input
-          placeholder="Enter location..."
+          placeholder={searchType ? `Search for ${searchType}...` : "Enter location..."}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyDown={(e) => {
@@ -105,7 +109,7 @@ function LocationSearch({
   );
 }
 
-// Update ActivityEditDialog to include LocationSearch
+// Update ActivityEditDialog to use searchType
 function ActivityEditDialog({ 
   activity, 
   onSave,
@@ -155,12 +159,14 @@ function ActivityEditDialog({
           </div>
 
           <LocationSearch 
-            onLocationSelect={({ lat, lng }) => {
+            onLocationSelect={({ lat, lng, address }) => {
               setEditedActivity({
                 ...editedActivity,
-                location: { lat, lng }
+                location: { lat, lng },
+                title: address.split(',')[0] // Use the first part of the address as the title
               });
             }}
+            searchType="venue" // This will help find specific places
           />
         </div>
         <div className="flex justify-end">
