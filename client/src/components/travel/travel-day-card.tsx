@@ -408,58 +408,58 @@ export default function TravelDayCard({
           <h3 className="text-lg font-semibold">Day {day}</h3>
 
           {/* Accommodation Section */}
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="text-sm font-medium text-emerald-700">Accommodation</h4>
-              {onEditAccommodation && (
-                <AccommodationEditDialog
-                  accommodation={accommodation}
-                  onSave={onEditAccommodation}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  }
-                />
-              )}
-            </div>
-            <div className="relative bg-emerald-50 rounded-lg p-3 border border-emerald-200">
-              <div className="relative z-10">
-                <div className="text-emerald-700 font-medium mb-1">
-                  {accommodation.title}
-                </div>
-                <div className="text-sm text-emerald-600">
-                  {accommodation.details}
-                  {shouldShowAccommodation && (
+          {shouldShowAccommodation && (
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="text-sm font-medium text-emerald-700">Accommodation</h4>
+                {onEditAccommodation && (
+                  <AccommodationEditDialog
+                    accommodation={accommodation}
+                    onSave={onEditAccommodation}
+                    trigger={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
+                )}
+              </div>
+              <div className="relative bg-emerald-50 rounded-lg p-3 border border-emerald-200">
+                <div className="relative z-10">
+                  <div className="text-emerald-700 font-medium mb-1">
+                    {accommodation.title}
+                  </div>
+                  <div className="text-sm text-emerald-600">
+                    {accommodation.details}
                     <div className="mt-1">
                       {day === accommodation.startDay && (
-                        <span>
+                        <div>
                           <span className="font-medium">Check-in:</span> {accommodation.checkInTime}
-                        </span>
+                        </div>
                       )}
                       {day === accommodation.endDay && (
-                        <span>
+                        <div>
                           <span className="font-medium">Check-out:</span> {accommodation.checkOutTime}
-                        </span>
+                        </div>
                       )}
                     </div>
-                  )}
+                  </div>
+                </div>
+                <div className="absolute inset-0 flex rounded-lg overflow-hidden">
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <div 
+                      key={i}
+                      className={`flex-1 ${accomHours.includes(i) ? 'bg-emerald-200/50' : ''}`}
+                    />
+                  ))}
                 </div>
               </div>
-              <div className="absolute inset-0 flex rounded-lg overflow-hidden">
-                {Array.from({ length: 24 }, (_, i) => (
-                  <div 
-                    key={i}
-                    className={`flex-1 ${accomHours.includes(i) ? 'bg-emerald-200/50' : ''}`}
-                  />
-                ))}
-              </div>
             </div>
-          </div>
+          )}
 
           {/* Transportation Section */}
           <div>
