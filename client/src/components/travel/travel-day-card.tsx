@@ -362,39 +362,27 @@ export default function TravelDayCard({
   isFirstCard = false,
   isLastCard = false
 }: TravelDayCardProps) {
+  // Calculate if this day is within any accommodation stay period
+  const isWithinStay = day >= accommodation.startDay && day <= accommodation.endDay;
+  const isCheckInDay = day === accommodation.startDay;
+  const isCheckOutDay = day === accommodation.endDay;
+
   // Only calculate accommodation hours if this day is within the accommodation period
-  const accomHours = day >= accommodation.startDay && day <= accommodation.endDay ? 
-    (day === accommodation.startDay ? 
+  const accomHours = isWithinStay ? 
+    (isCheckInDay ? 
       // First day: only show from check-in time
       getHourRange(accommodation.checkInTime, "23:59") :
-      day === accommodation.endDay ?
+      isCheckOutDay ?
         // Last day: only show until check-out time
         getHourRange("00:00", accommodation.checkOutTime) :
         // Middle days: show full day
         getHourRange("00:00", "23:59")
     ) : [];
 
-  // For transportation, handle continuous vs scheduled differently
-  const transHours = transportation.type === 'continuous' ?
-    // Continuous transportation shows availability all day
-    getHourRange("00:00", "23:59") :
-    // Scheduled transportation only shows during transit times
-    transportation.departureTime && transportation.arrivalTime ?
-      getHourRange(transportation.departureTime, transportation.arrivalTime) :
-      [];
-
-  const activityHours = activities.flatMap(activity => 
-    getHourRange(activity.time, activity.duration)
-  );
-
   const containerClasses = `
     h-full
     ${isFirstCard ? 'pr-0' : isLastCard ? 'pl-0' : 'px-0'}
   `;
-
-  const isWithinStay = day >= accommodation.startDay && day <= accommodation.endDay;
-  const isCheckInDay = day === accommodation.startDay;
-  const isCheckOutDay = day === accommodation.endDay;
 
   return (
     <motion.div
@@ -410,7 +398,9 @@ export default function TravelDayCard({
           {/* Accommodation Section */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <h4 className="text-sm font-medium text-emerald-700">Accommodation</h4>
+              <h4 className="text-sm font-medium text-emerald-700">
+                {isWithinStay ? `Stay at ${accommodation.title}` : 'No Accommodation'}
+              </h4>
               {onEditAccommodation && (
                 <AccommodationEditDialog
                   accommodation={accommodation}
@@ -429,26 +419,32 @@ export default function TravelDayCard({
             </div>
             <div className="relative bg-emerald-50 rounded-lg p-3 border border-emerald-200">
               <div className="relative z-10">
-                <div className="text-emerald-700 font-medium mb-1">
-                  {accommodation.title}
-                </div>
-                <div className="text-sm text-emerald-600">
-                  {accommodation.details}
-                  {isWithinStay && (
-                    <div className="mt-1">
-                      {isCheckInDay && (
-                        <div>
-                          <span className="font-medium">Check-in:</span> {accommodation.checkInTime}
-                        </div>
-                      )}
-                      {isCheckOutDay && (
-                        <div>
-                          <span className="font-medium">Check-out:</span> {accommodation.checkOutTime}
-                        </div>
-                      )}
+                {isWithinStay ? (
+                  <>
+                    <div className="text-emerald-700 font-medium mb-1">
+                      {accommodation.title}
                     </div>
-                  )}
-                </div>
+                    <div className="text-sm text-emerald-600">
+                      {accommodation.details}
+                      <div className="mt-1">
+                        {isCheckInDay && (
+                          <div>
+                            <span className="font-medium">Check-in:</span> {accommodation.checkInTime}
+                          </div>
+                        )}
+                        {isCheckOutDay && (
+                          <div>
+                            <span className="font-medium">Check-out:</span> {accommodation.checkOutTime}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-emerald-600 text-sm italic">
+                    No accommodation scheduled for this day
+                  </div>
+                )}
               </div>
               <div className="absolute inset-0 flex rounded-lg overflow-hidden">
                 {Array.from({ length: 24 }, (_, i) => (
