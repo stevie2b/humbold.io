@@ -17,12 +17,17 @@ interface JourneyMapProps {
   className?: string;
 }
 
+// Get Mapbox token from environment
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
-if (!MAPBOX_TOKEN) {
-  console.error('Mapbox token not found. Map functionality will be limited.');
+
+// Validate token format (should start with 'pk.')
+const isValidToken = MAPBOX_TOKEN && MAPBOX_TOKEN.startsWith('pk.');
+
+if (!isValidToken) {
+  console.error('Invalid or missing Mapbox token. Token should start with "pk."');
 }
 
-// Initialize mapbox
+// Initialize mapbox with token
 mapboxgl.accessToken = MAPBOX_TOKEN || '';
 
 export function JourneyMap({ locations, className = '' }: JourneyMapProps) {
@@ -30,9 +35,11 @@ export function JourneyMap({ locations, className = '' }: JourneyMapProps) {
   const map = useRef<mapboxgl.Map | null>(null);
 
   useEffect(() => {
-    if (!mapContainer.current || !MAPBOX_TOKEN) return;
+    if (!mapContainer.current || !isValidToken) return;
 
     try {
+      console.log('Initializing map with token:', MAPBOX_TOKEN?.substring(0, 8) + '...');
+
       // Initialize map
       const newMap = new mapboxgl.Map({
         container: mapContainer.current,
@@ -85,32 +92,36 @@ export function JourneyMap({ locations, className = '' }: JourneyMapProps) {
       if (locations.length > 1) {
         newMap.on('load', () => {
           if (newMap) {
-            newMap.addSource('route', {
-              type: 'geojson',
-              data: {
-                type: 'Feature',
-                properties: {},
-                geometry: {
-                  type: 'LineString',
-                  coordinates: locations.map(loc => [loc.coordinates.lng, loc.coordinates.lat])
+            try {
+              newMap.addSource('route', {
+                type: 'geojson',
+                data: {
+                  type: 'Feature',
+                  properties: {},
+                  geometry: {
+                    type: 'LineString',
+                    coordinates: locations.map(loc => [loc.coordinates.lng, loc.coordinates.lat])
+                  }
                 }
-              }
-            });
+              });
 
-            newMap.addLayer({
-              id: 'route',
-              type: 'line',
-              source: 'route',
-              layout: {
-                'line-join': 'round',
-                'line-cap': 'round'
-              },
-              paint: {
-                'line-color': '#888',
-                'line-width': 3,
-                'line-dasharray': [2, 1]
-              }
-            });
+              newMap.addLayer({
+                id: 'route',
+                type: 'line',
+                source: 'route',
+                layout: {
+                  'line-join': 'round',
+                  'line-cap': 'round'
+                },
+                paint: {
+                  'line-color': '#888',
+                  'line-width': 3,
+                  'line-dasharray': [2, 1]
+                }
+              });
+            } catch (error) {
+              console.error('Error adding route layer:', error);
+            }
           }
         });
       }
@@ -126,10 +137,13 @@ export function JourneyMap({ locations, className = '' }: JourneyMapProps) {
     }
   }, [locations]);
 
-  if (!MAPBOX_TOKEN) {
+  if (!isValidToken) {
     return (
       <div className={`flex items-center justify-center bg-gray-100 rounded-lg ${className}`}>
-        <p className="text-gray-500">Map view is currently unavailable. Please check if the VITE_MAPBOX_ACCESS_TOKEN environment variable is set.</p>
+        <p className="text-gray-500">
+          Map view is currently unavailable. Please ensure a valid Mapbox access token 
+          (starting with 'pk.') is set in the VITE_MAPBOX_ACCESS_TOKEN environment variable.
+        </p>
       </div>
     );
   }
