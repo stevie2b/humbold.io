@@ -12,26 +12,32 @@ interface ActivityItem {
   duration?: string;
 }
 
-interface TravelItineraryProps {
-  itinerary: Array<{
-    day: number;
-    accommodation: {
-      title: string;
-      details: string;
-      checkInTime?: string;
-      checkOutTime?: string;
-    };
-    transportation: {
-      title: string;
-      details: string;
-      arrivalTime?: string;
-      departureTime?: string;
-    };
-    activities: ActivityItem[];
-  }>;
+interface TravelDayCardProps {
+  day: number;
+  accommodation: {
+    title: string;
+    details: string;
+    checkInTime?: string;
+    checkOutTime?: string;
+  };
+  transportation: {
+    title: string;
+    details: string;
+    arrivalTime?: string;
+    departureTime?: string;
+  };
+  activities: ActivityItem[];
+  onRemoveActivity: (activityIndex: number) => void;
+  onAddActivity: (activity: ActivityItem) => void;
+  onEditActivity: (activityIndex: number) => void;
+  onEditAccommodation: () => void;
+  onEditTransportation: () => void;
+  recommendations: ActivityItem[];
+  isFirstCard: boolean;
+  isLastCard: boolean;
 }
 
-export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
+export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCardProps[] }) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     dragFree: true,
@@ -52,31 +58,10 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  const handleDownload = async () => {
-    try {
-      const url = await generateICS(itinerary);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'travel-itinerary.ics';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Failed to download itinerary:', error);
-      toast({
-        title: "Error",
-        description: "Failed to download itinerary. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleRemoveActivity = (dayIndex: number, activityIndex: number) => {
     const day = itinerary[dayIndex];
     const removedActivity = day.activities[activityIndex];
 
-    // Add to removed activities
     setRemovedActivities(prev => ({
       ...prev,
       [dayIndex]: [...(prev[dayIndex] || []), removedActivity]
@@ -84,11 +69,34 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
   };
 
   const handleAddActivity = (dayIndex: number, activity: ActivityItem) => {
-    // Remove from recommendations
     setRemovedActivities(prev => ({
       ...prev,
       [dayIndex]: (prev[dayIndex] || []).filter(a => a.title !== activity.title)
     }));
+  };
+
+  const handleEditAccommodation = (dayIndex: number) => {
+    // Implement accommodation editing logic
+    toast({
+      title: "Edit Accommodation",
+      description: "Accommodation editing feature coming soon!",
+    });
+  };
+
+  const handleEditTransportation = (dayIndex: number) => {
+    // Implement transportation editing logic
+    toast({
+      title: "Edit Transportation",
+      description: "Transportation editing feature coming soon!",
+    });
+  };
+
+  const handleEditActivity = (dayIndex: number, activityIndex: number) => {
+    // Implement activity editing logic
+    toast({
+      title: "Edit Activity",
+      description: "Activity editing feature coming soon!",
+    });
   };
 
   if (!itinerary?.length) return null;
@@ -141,6 +149,9 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
                   {...day} 
                   onRemoveActivity={(activityIndex) => handleRemoveActivity(index, activityIndex)}
                   onAddActivity={(activity) => handleAddActivity(index, activity)}
+                  onEditActivity={(activityIndex) => handleEditActivity(index, activityIndex)}
+                  onEditAccommodation={() => handleEditAccommodation(index)}
+                  onEditTransportation={() => handleEditTransportation(index)}
                   recommendations={[
                     {
                       time: "09:00",
@@ -171,7 +182,25 @@ export default function TravelItinerary({ itinerary }: TravelItineraryProps) {
       <div className="flex justify-center mt-8">
         <Button
           type="button"
-          onClick={handleDownload}
+          onClick={async () => {
+            try {
+              const url = await generateICS(itinerary);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = 'travel-itinerary.ics';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+            } catch (error) {
+              console.error('Failed to download itinerary:', error);
+              toast({
+                title: "Error",
+                description: "Failed to download itinerary. Please try again.",
+                variant: "destructive",
+              });
+            }
+          }}
           className="w-auto px-6"
         >
           Download Itinerary

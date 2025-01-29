@@ -25,6 +25,8 @@ interface TravelDayCardProps {
   onRemoveActivity?: (index: number) => void;
   onAddActivity?: (activity: { time: string; title: string; duration?: string }) => void;
   onEditActivity?: (index: number) => void;
+  onEditAccommodation?: () => void;
+  onEditTransportation?: () => void;
   recommendations?: Array<{
     time: string;
     title: string;
@@ -48,8 +50,7 @@ function getTimeQuarters(startTime: string, endTime?: string): number[] {
     const quarterStart = i * 360;  // 360 minutes = 6 hours
     const quarterEnd = (i + 1) * 360;
 
-    if ((startTimeInMinutes <= quarterEnd && endTimeInMinutes >= quarterStart) ||
-        (endTime && startTimeInMinutes <= quarterEnd)) {
+    if (startTimeInMinutes <= quarterEnd && endTimeInMinutes >= quarterStart) {
       quarters.push(i);
     }
   }
@@ -65,11 +66,12 @@ export default function TravelDayCard({
   onRemoveActivity,
   onAddActivity,
   onEditActivity,
+  onEditAccommodation,
+  onEditTransportation,
   recommendations = [],
   isFirstCard = false,
   isLastCard = false
 }: TravelDayCardProps) {
-  // Extract times
   const checkInTime = accommodation.checkInTime || "15:00";
   const checkOutTime = accommodation.checkOutTime || "11:00";
   const arrivalTime = transportation.arrivalTime || "09:00";
@@ -96,7 +98,19 @@ export default function TravelDayCard({
 
           {/* Accommodation Section - Green */}
           <div>
-            <h4 className="text-sm font-medium text-emerald-700 mb-2">Accommodation</h4>
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="text-sm font-medium text-emerald-700">Accommodation</h4>
+              {onEditAccommodation && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={onEditAccommodation}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
             <div className="relative bg-emerald-50 rounded-lg p-3 border border-emerald-200">
               <div className="relative z-10">
                 <div className="text-emerald-700 font-medium mb-1">
@@ -124,7 +138,19 @@ export default function TravelDayCard({
 
           {/* Transportation Section - Yellow */}
           <div>
-            <h4 className="text-sm font-medium text-amber-700 mb-2">Transportation</h4>
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="text-sm font-medium text-amber-700">Transportation</h4>
+              {onEditTransportation && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={onEditTransportation}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
             <div className="relative bg-amber-50 rounded-lg p-3 border border-amber-200">
               <div className="relative z-10">
                 <div className="text-amber-700 font-medium mb-1">
@@ -162,7 +188,7 @@ export default function TravelDayCard({
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
                       <span className="text-blue-600 font-medium">
-                        {activity.time}
+                        {activity.time} 
                         {activity.duration && ` - ${activity.duration}`}
                       </span>
                       <span className="text-blue-700">
