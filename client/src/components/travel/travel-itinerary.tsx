@@ -10,6 +10,10 @@ interface ActivityItem {
   time: string;
   title: string;
   duration?: string;
+  location?: {
+    lat: number;
+    lng: number;
+  };
 }
 
 interface TravelDayCardProps {
@@ -19,22 +23,28 @@ interface TravelDayCardProps {
     details: string;
     checkInTime?: string;
     checkOutTime?: string;
+    coordinates?: {
+      lat: number;
+      lng: number;
+    };
   };
   transportation: {
     title: string;
     details: string;
     arrivalTime?: string;
     departureTime?: string;
+    route?: {
+      from: {
+        lat: number;
+        lng: number;
+      };
+      to: {
+        lat: number;
+        lng: number;
+      };
+    };
   };
   activities: ActivityItem[];
-  onRemoveActivity: (activityIndex: number) => void;
-  onAddActivity: (activity: ActivityItem) => void;
-  onEditActivity: (activityIndex: number) => void;
-  onEditAccommodation: () => void;
-  onEditTransportation: () => void;
-  recommendations: ActivityItem[];
-  isFirstCard: boolean;
-  isLastCard: boolean;
 }
 
 export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCardProps[] }) {
@@ -47,6 +57,9 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
 
   const { toast } = useToast();
 
+  // State for managing the itinerary data
+  const [currentItinerary, setCurrentItinerary] = useState(itinerary);
+
   // State for managing removed activities per day
   const [removedActivities, setRemovedActivities] = useState<{ [key: number]: ActivityItem[] }>({});
 
@@ -58,48 +71,105 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
+  const handleEditActivity = (dayIndex: number, activityIndex: number, updatedActivity: ActivityItem) => {
+    setCurrentItinerary(prev => {
+      const newItinerary = [...prev];
+      newItinerary[dayIndex] = {
+        ...newItinerary[dayIndex],
+        activities: [
+          ...newItinerary[dayIndex].activities.slice(0, activityIndex),
+          updatedActivity,
+          ...newItinerary[dayIndex].activities.slice(activityIndex + 1)
+        ]
+      };
+      return newItinerary;
+    });
+
+    toast({
+      title: "Activity Updated",
+      description: "The activity has been successfully updated.",
+    });
+  };
+
   const handleRemoveActivity = (dayIndex: number, activityIndex: number) => {
-    const day = itinerary[dayIndex];
-    const removedActivity = day.activities[activityIndex];
+    const removedActivity = currentItinerary[dayIndex].activities[activityIndex];
+
+    setCurrentItinerary(prev => {
+      const newItinerary = [...prev];
+      newItinerary[dayIndex] = {
+        ...newItinerary[dayIndex],
+        activities: newItinerary[dayIndex].activities.filter((_, i) => i !== activityIndex)
+      };
+      return newItinerary;
+    });
 
     setRemovedActivities(prev => ({
       ...prev,
       [dayIndex]: [...(prev[dayIndex] || []), removedActivity]
     }));
+
+    toast({
+      title: "Activity Removed",
+      description: "The activity has been moved to recommendations.",
+    });
   };
 
   const handleAddActivity = (dayIndex: number, activity: ActivityItem) => {
+    setCurrentItinerary(prev => {
+      const newItinerary = [...prev];
+      newItinerary[dayIndex] = {
+        ...newItinerary[dayIndex],
+        activities: [...newItinerary[dayIndex].activities, activity]
+      };
+      return newItinerary;
+    });
+
     setRemovedActivities(prev => ({
       ...prev,
-      [dayIndex]: (prev[dayIndex] || []).filter(a => a.title !== activity.title)
+      [dayIndex]: (prev[dayIndex] || []).filter(a => 
+        !(a.time === activity.time && a.title === activity.title)
+      )
     }));
-  };
 
-  const handleEditAccommodation = (dayIndex: number) => {
-    // Implement accommodation editing logic
     toast({
-      title: "Edit Accommodation",
-      description: "Accommodation editing feature coming soon!",
+      title: "Activity Added",
+      description: "The activity has been added to your itinerary.",
     });
   };
 
-  const handleEditTransportation = (dayIndex: number) => {
-    // Implement transportation editing logic
+  const handleEditAccommodation = (dayIndex: number, updatedAccommodation: any) => {
+    setCurrentItinerary(prev => {
+      const newItinerary = [...prev];
+      newItinerary[dayIndex] = {
+        ...newItinerary[dayIndex],
+        accommodation: updatedAccommodation
+      };
+      return newItinerary;
+    });
+
     toast({
-      title: "Edit Transportation",
-      description: "Transportation editing feature coming soon!",
+      title: "Accommodation Updated",
+      description: "The accommodation details have been updated.",
     });
   };
 
-  const handleEditActivity = (dayIndex: number, activityIndex: number) => {
-    // Implement activity editing logic
+  const handleEditTransportation = (dayIndex: number, updatedTransportation: any) => {
+    setCurrentItinerary(prev => {
+      const newItinerary = [...prev];
+      newItinerary[dayIndex] = {
+        ...newItinerary[dayIndex],
+        transportation: updatedTransportation
+      };
+      return newItinerary;
+    });
+
     toast({
-      title: "Edit Activity",
-      description: "Activity editing feature coming soon!",
+      title: "Transportation Updated",
+      description: "The transportation details have been updated.",
     });
   };
 
-  if (!itinerary?.length) return null;
+  if (!currentItinerary?.length) return null;
 
   return (
     <div className="space-y-6">
@@ -140,19 +210,23 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
         {/* Carousel Container */}
         <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex">
-            {itinerary.map((day, index) => (
+            {currentItinerary.map((day, index) => (
               <div 
                 key={day.day}
-                className={`flex-[0_0_33.333%] min-w-[300px]`}
+                className="flex-[0_0_33.333%] min-w-[300px]"
               >
                 <TravelDayCard 
                   {...day} 
                   onRemoveActivity={(activityIndex) => handleRemoveActivity(index, activityIndex)}
                   onAddActivity={(activity) => handleAddActivity(index, activity)}
-                  onEditActivity={(activityIndex) => handleEditActivity(index, activityIndex)}
-                  onEditAccommodation={() => handleEditAccommodation(index)}
-                  onEditTransportation={() => handleEditTransportation(index)}
+                  onEditActivity={(activityIndex, updatedActivity) => 
+                    handleEditActivity(index, activityIndex, updatedActivity)}
+                  onEditAccommodation={(updatedAccommodation) => 
+                    handleEditAccommodation(index, updatedAccommodation)}
+                  onEditTransportation={(updatedTransportation) => 
+                    handleEditTransportation(index, updatedTransportation)}
                   recommendations={[
+                    ...(removedActivities[index] || []),
                     {
                       time: "09:00",
                       duration: "12:00",
@@ -167,11 +241,10 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
                       time: "18:00",
                       duration: "20:00",
                       title: "Local Cuisine Experience"
-                    },
-                    ...(removedActivities[index] || [])
+                    }
                   ]}
                   isFirstCard={index === 0}
-                  isLastCard={index === itinerary.length - 1}
+                  isLastCard={index === currentItinerary.length - 1}
                 />
               </div>
             ))}
@@ -179,12 +252,11 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
         </div>
       </div>
 
-      <div className="flex justify-center mt-8">
+      <div className="flex justify-center">
         <Button
-          type="button"
           onClick={async () => {
             try {
-              const url = await generateICS(itinerary);
+              const url = await generateICS(currentItinerary);
               const link = document.createElement('a');
               link.href = url;
               link.download = 'travel-itinerary.ics';
@@ -192,6 +264,11 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
               link.click();
               document.body.removeChild(link);
               URL.revokeObjectURL(url);
+
+              toast({
+                title: "Success",
+                description: "Your itinerary has been downloaded successfully.",
+              });
             } catch (error) {
               console.error('Failed to download itinerary:', error);
               toast({
