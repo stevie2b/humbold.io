@@ -1,8 +1,9 @@
 import { useCallback, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Map, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TravelDayCard from "./travel-day-card";
+import { JourneyMap } from "./journey-map";
 import { generateICS } from "@/lib/ics-generator";
 import { useToast } from "@/hooks/use-toast";
 
@@ -54,7 +55,7 @@ interface TravelDayCardProps {
   accommodation: AccommodationDetails;
   transportation: TransportationDetails;
   activities: ActivityItem[];
-  startDate?: Date; // Added startDate prop
+  startDate?: Date;
 }
 
 export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCardProps[] }) {
@@ -67,7 +68,8 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
   const { toast } = useToast();
   const [currentItinerary, setCurrentItinerary] = useState(itinerary);
   const [removedActivities, setRemovedActivities] = useState<{ [key: number]: ActivityItem[] }>({});
-  const startDate = new Date(); // We can make this configurable later if needed
+  const startDate = new Date();
+  const [viewMode, setViewMode] = useState<'cards' | 'map'>('cards');
 
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
@@ -133,7 +135,7 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
     // Remove the activity from recommendations
     setRemovedActivities(prev => ({
       ...prev,
-      [dayIndex]: prev[dayIndex]?.filter(a => 
+      [dayIndex]: prev[dayIndex]?.filter(a =>
         !(a.time === activity.time && a.title === activity.title)
       ) || []
     }));
@@ -176,83 +178,151 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
     });
   };
 
+  // Extract all locations for the map
+  const mapLocations = currentItinerary.flatMap(day => {
+    const locations = [];
+
+    // Add accommodation
+    if (day.accommodation.coordinates) {
+      locations.push({
+        title: day.accommodation.title,
+        coordinates: day.accommodation.coordinates,
+        type: 'accommodation' as const,
+        day: day.day
+      });
+    }
+
+    // Add transportation routes
+    if (day.transportation.route) {
+      locations.push({
+        title: day.transportation.title,
+        coordinates: day.transportation.route.from,
+        type: 'transportation' as const,
+        day: day.day
+      });
+      locations.push({
+        title: `${day.transportation.title} (Destination)`,
+        coordinates: day.transportation.route.to,
+        type: 'transportation' as const,
+        day: day.day
+      });
+    }
+
+    // Add activities
+    day.activities.forEach(activity => {
+      if (activity.location) {
+        locations.push({
+          title: activity.title,
+          coordinates: activity.location,
+          type: 'activity' as const,
+          day: day.day
+        });
+      }
+    });
+
+    return locations;
+  });
+
   if (!currentItinerary?.length) return null;
 
   return (
     <div className="space-y-6">
-      <div className="relative w-full">
-        <div className="hidden md:block">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex space-x-2">
           <Button
-            variant="outline"
-            size="icon"
-            className="absolute -left-4 top-1/2 transform -translate-y-1/2 z-10 bg-background shadow-lg"
-            onClick={scrollPrev}
+            variant={viewMode === 'cards' ? 'default' : 'outline'}
+            onClick={() => setViewMode('cards')}
           >
-            <ChevronLeft className="h-4 w-4" />
+            <Calendar className="h-4 w-4 mr-2" />
+            Calendar View
           </Button>
-
           <Button
-            variant="outline"
-            size="icon"
-            className="absolute -right-4 top-1/2 transform -translate-y-1/2 z-10 bg-background shadow-lg"
-            onClick={scrollNext}
+            variant={viewMode === 'map' ? 'default' : 'outline'}
+            onClick={() => setViewMode('map')}
           >
-            <ChevronRight className="h-4 w-4" />
+            <Map className="h-4 w-4 mr-2" />
+            Map View
           </Button>
-        </div>
-
-        <div className="flex justify-between mb-4 md:hidden">
-          <Button variant="outline" size="sm" onClick={scrollPrev}>
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Previous Day
-          </Button>
-          <Button variant="outline" size="sm" onClick={scrollNext}>
-            Next Day
-            <ChevronRight className="h-4 w-4 ml-2" />
-          </Button>
-        </div>
-
-        <div className="overflow-hidden" ref={emblaRef}>
-          <div className="flex">
-            {currentItinerary.map((day, index) => (
-              <div 
-                key={day.day}
-                className="flex-[0_0_33.333%] min-w-[300px]"
-              >
-                <TravelDayCard 
-                  {...day} 
-                  startDate={startDate}
-                  onRemoveActivity={(activityIndex) => handleRemoveActivity(index, activityIndex)}
-                  onAddActivity={(activity) => handleAddActivity(index, activity)}
-                  onEditActivity={(activityIndex, updatedActivity) => 
-                    handleEditActivity(index, activityIndex, updatedActivity)}
-                  onEditAccommodation={(updatedAccommodation) => 
-                    handleEditAccommodation(index, updatedAccommodation)}
-                  onEditTransportation={(updatedTransportation) => 
-                    handleEditTransportation(index, updatedTransportation)}
-                  recommendations={[
-                    ...(removedActivities[index] || []).slice(0, 3), 
-                    ...((removedActivities[index]?.length || 0) < 3 ? [
-                      {
-                        time: "09:00",
-                        duration: "12:00",
-                        title: "Local Museum Visit"
-                      },
-                      {
-                        time: "14:00",
-                        duration: "17:00",
-                        title: "City Walking Tour"
-                      }
-                    ].slice(0, 3 - (removedActivities[index]?.length || 0)) : [])
-                  ]}
-                  isFirstCard={index === 0}
-                  isLastCard={index === currentItinerary.length - 1}
-                />
-              </div>
-            ))}
-          </div>
         </div>
       </div>
+
+      {viewMode === 'cards' ? (
+        <div className="relative w-full">
+          <div className="hidden md:block">
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute -left-4 top-1/2 transform -translate-y-1/2 z-10 bg-background shadow-lg"
+              onClick={scrollPrev}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute -right-4 top-1/2 transform -translate-y-1/2 z-10 bg-background shadow-lg"
+              onClick={scrollNext}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="flex justify-between mb-4 md:hidden">
+            <Button variant="outline" size="sm" onClick={scrollPrev}>
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Previous Day
+            </Button>
+            <Button variant="outline" size="sm" onClick={scrollNext}>
+              Next Day
+              <ChevronRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+
+          <div className="overflow-hidden" ref={emblaRef}>
+            <div className="flex">
+              {currentItinerary.map((day, index) => (
+                <div
+                  key={day.day}
+                  className="flex-[0_0_33.333%] min-w-[300px]"
+                >
+                  <TravelDayCard
+                    {...day}
+                    startDate={startDate}
+                    onRemoveActivity={(activityIndex) => handleRemoveActivity(index, activityIndex)}
+                    onAddActivity={(activity) => handleAddActivity(index, activity)}
+                    onEditActivity={(activityIndex, updatedActivity) =>
+                      handleEditActivity(index, activityIndex, updatedActivity)}
+                    onEditAccommodation={(updatedAccommodation) =>
+                      handleEditAccommodation(index, updatedAccommodation)}
+                    onEditTransportation={(updatedTransportation) =>
+                      handleEditTransportation(index, updatedTransportation)}
+                    recommendations={[
+                      ...(removedActivities[index] || []).slice(0, 3),
+                      ...((removedActivities[index]?.length || 0) < 3 ? [
+                        {
+                          time: "09:00",
+                          duration: "12:00",
+                          title: "Local Museum Visit"
+                        },
+                        {
+                          time: "14:00",
+                          duration: "17:00",
+                          title: "City Walking Tour"
+                        }
+                      ].slice(0, 3 - (removedActivities[index]?.length || 0)) : [])
+                    ]}
+                    isFirstCard={index === 0}
+                    isLastCard={index === currentItinerary.length - 1}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <JourneyMap locations={mapLocations} className="h-[600px] mb-6" />
+      )}
 
       <div className="flex justify-center">
         <Button
