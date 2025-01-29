@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -18,28 +18,35 @@ interface JourneyMapProps {
 }
 
 // Get Mapbox token from environment
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
-
-// Validate token format (should start with 'pk.')
-const isValidToken = MAPBOX_TOKEN && MAPBOX_TOKEN.startsWith('pk.');
-
-if (!isValidToken) {
-  console.error('Invalid or missing Mapbox token. Token should start with "pk."');
-}
+const getMapboxToken = () => {
+  const token = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+  console.log('Retrieved Mapbox token:', token ? `${token.substring(0, 8)}...` : 'not found');
+  return token;
+};
 
 // Initialize mapbox with token
-mapboxgl.accessToken = MAPBOX_TOKEN || '';
+const initializeMapbox = () => {
+  const token = getMapboxToken();
+  if (!token || !token.startsWith('pk.')) {
+    console.error('Invalid Mapbox token format. Token must start with "pk."');
+    return false;
+  }
+  mapboxgl.accessToken = token;
+  return true;
+};
 
 export function JourneyMap({ locations, className = '' }: JourneyMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const [isTokenValid, setIsTokenValid] = useState(false);
 
   useEffect(() => {
-    if (!mapContainer.current || !isValidToken) return;
+    const tokenValid = initializeMapbox();
+    setIsTokenValid(tokenValid);
+
+    if (!mapContainer.current || !tokenValid) return;
 
     try {
-      console.log('Initializing map with token:', MAPBOX_TOKEN?.substring(0, 8) + '...');
-
       // Initialize map
       const newMap = new mapboxgl.Map({
         container: mapContainer.current,
@@ -137,12 +144,13 @@ export function JourneyMap({ locations, className = '' }: JourneyMapProps) {
     }
   }, [locations]);
 
-  if (!isValidToken) {
+  if (!isTokenValid) {
     return (
       <div className={`flex items-center justify-center bg-gray-100 rounded-lg ${className}`}>
-        <p className="text-gray-500">
+        <p className="text-gray-500 p-4 text-center">
           Map view is currently unavailable. Please ensure a valid Mapbox access token 
           (starting with 'pk.') is set in the VITE_MAPBOX_ACCESS_TOKEN environment variable.
+          If you've just added the token, try refreshing the page.
         </p>
       </div>
     );
