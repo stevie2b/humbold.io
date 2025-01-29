@@ -129,7 +129,7 @@ export function JourneyMap({ locations, className = '' }: JourneyMapProps) {
   if (!MAPBOX_TOKEN) {
     return (
       <div className={`flex items-center justify-center bg-gray-100 rounded-lg ${className}`}>
-        <p className="text-gray-500">Map view is currently unavailable. Please add a Mapbox access token.</p>
+        <p className="text-gray-500">Map view is currently unavailable. Please check if the VITE_MAPBOX_ACCESS_TOKEN environment variable is set.</p>
       </div>
     );
   }
