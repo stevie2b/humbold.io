@@ -8,20 +8,42 @@ export interface TravelPlan {
     accommodation: {
       title: string;
       details: string;
+      coordinates?: {
+        lat: number;
+        lng: number;
+      };
+      price_range?: string;
+      booking_url?: string;
     };
     transportation: {
       title: string;
       details: string;
+      route?: {
+        from: {
+          lat: number;
+          lng: number;
+        };
+        to: {
+          lat: number;
+          lng: number;
+        };
+      };
     };
     activities: Array<{
       time: string;
+      duration: string;
       title: string;
+      location?: {
+        lat: number;
+        lng: number;
+      };
+      category?: string;
+      description?: string;
     }>;
   }>;
   recommendations: string[];
 }
 
-// Fallback function to generate a basic itinerary when OpenAI is unavailable
 function generateBasicItinerary(preferences: {
   season: string;
   specificDate?: Date;
@@ -29,12 +51,11 @@ function generateBasicItinerary(preferences: {
   travelerType: string;
   activities: string[];
   numberOfDays: number;
+  coordinates?: { lat: number; lng: number };
 }): TravelPlan {
-  // Ensure we use the exact number of days specified
   const numDays = Math.max(1, Math.min(30, preferences.numberOfDays));
   console.log(`Generating basic itinerary for ${numDays} days`, preferences);
 
-  // Generate activities based on preferences
   const defaultActivities = preferences.activities.filter(a => a !== 'custom');
   const activityTypes = [
     ...defaultActivities,
@@ -44,39 +65,53 @@ function generateBasicItinerary(preferences: {
     'Local Cuisine'
   ];
 
-  // Generate a basic itinerary for the specified number of days
   const itinerary = Array.from({ length: numDays }, (_, i) => ({
     day: i + 1,
     accommodation: {
       title: i === 0 ? "Hotel Check-in" : "Hotel Stay",
-      details: `Comfortable accommodation in ${preferences.destination}`
+      details: `Comfortable accommodation in ${preferences.destination}`,
+      coordinates: preferences.coordinates,
+      price_range: "$$",
+      booking_url: "https://www.booking.com"
     },
     transportation: {
       title: i === 0 ? "Arrival" : i === numDays - 1 ? "Departure" : "Local Transport",
-      details: i === 0 ? "Airport Transfer" : i === numDays - 1 ? "Airport Transfer" : "Local transit and walking"
+      details: i === 0 ? "Airport Transfer" : i === numDays - 1 ? "Airport Transfer" : "Local transit and walking",
+      route: preferences.coordinates ? {
+        from: preferences.coordinates,
+        to: preferences.coordinates
+      } : undefined
     },
     activities: [
       {
         time: "09:00",
+        duration: "12:00",
         title: i === 0 
           ? "Welcome Orientation" 
-          : `${activityTypes[i % activityTypes.length]} Activity`
+          : `${activityTypes[i % activityTypes.length]} Activity`,
+        location: preferences.coordinates,
+        category: activityTypes[i % activityTypes.length],
+        description: `Explore the best of ${preferences.destination}`
       },
       {
         time: "13:00",
-        title: "Lunch Break and Rest"
+        duration: "14:00",
+        title: "Lunch Break and Rest",
+        category: "Dining",
+        description: "Enjoy local cuisine"
       },
       {
         time: "15:00",
+        duration: "18:00",
         title: i === numDays - 1 
           ? "Prepare for Departure" 
-          : `${activityTypes[(i + 2) % activityTypes.length]} Experience`
+          : `${activityTypes[(i + 2) % activityTypes.length]} Experience`,
+        location: preferences.coordinates,
+        category: activityTypes[(i + 2) % activityTypes.length],
+        description: `Experience ${preferences.destination} like a local`
       }
     ]
   }));
-
-  // Debug log the generated itinerary
-  console.log("Generated itinerary length:", itinerary.length);
 
   return {
     itinerary,
@@ -97,6 +132,7 @@ export async function generateTravelPlan(preferences: {
   travelerType: string;
   activities: string[];
   numberOfDays: number;
+  coordinates?: { lat: number; lng: number };
 }): Promise<TravelPlan> {
   try {
     if (!process.env.OPENAI_API_KEY) {
@@ -111,8 +147,16 @@ export async function generateTravelPlan(preferences: {
       Traveler Type: ${preferences.travelerType}
       Activities: ${preferences.activities.join(', ')}
       Number of Days: ${preferences.numberOfDays}
+      ${preferences.coordinates ? `Location Coordinates: ${JSON.stringify(preferences.coordinates)}` : ''}
 
-      IMPORTANT: The itinerary MUST be exactly ${preferences.numberOfDays} days long, no more and no less.
+      IMPORTANT REQUIREMENTS:
+      1. The itinerary MUST be exactly ${preferences.numberOfDays} days long
+      2. Each activity MUST have a start time and duration
+      3. Include realistic coordinate data for mapping
+      4. Add booking URLs for accommodations where applicable
+      5. Categorize activities for better organization
+      6. Include price ranges for accommodations ($ to $$$$$)
+      7. Add detailed descriptions for activities
 
       Please provide the response in this JSON format:
       {
@@ -120,26 +164,37 @@ export async function generateTravelPlan(preferences: {
           {
             "day": 1,
             "accommodation": {
-              "title": "Hotel name or type",
-              "details": "Check-in details and location"
+              "title": "Hotel name",
+              "details": "Details about the accommodation",
+              "coordinates": {"lat": number, "lng": number},
+              "price_range": "$$",
+              "booking_url": "URL"
             },
             "transportation": {
-              "title": "Transportation type",
-              "details": "Transportation details"
+              "title": "Transport type",
+              "details": "Transport details",
+              "route": {
+                "from": {"lat": number, "lng": number},
+                "to": {"lat": number, "lng": number}
+              }
             },
             "activities": [
               {
                 "time": "HH:MM",
-                "title": "Activity description"
+                "duration": "HH:MM",
+                "title": "Activity name",
+                "location": {"lat": number, "lng": number},
+                "category": "Activity type",
+                "description": "Detailed description"
               }
             ]
           }
         ],
-        "recommendations": ["Additional recommendation 1", "Additional recommendation 2"]
+        "recommendations": ["Recommendation 1", "Recommendation 2"]
       }`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       temperature: 0.7,
@@ -156,37 +211,53 @@ export async function generateTravelPlan(preferences: {
     if (result.itinerary.length !== preferences.numberOfDays) {
       console.log(`Incorrect number of days in response (${result.itinerary.length}), adjusting to ${preferences.numberOfDays}`);
 
-      // If we have too few days, add more
       while (result.itinerary.length < preferences.numberOfDays) {
         const day = result.itinerary.length + 1;
         result.itinerary.push({
           day,
           accommodation: {
             title: "Hotel Stay",
-            details: `Continued stay in ${preferences.destination}`
+            details: `Continued stay in ${preferences.destination}`,
+            coordinates: preferences.coordinates,
+            price_range: "$$",
+            booking_url: "https://www.booking.com"
           },
           transportation: {
             title: "Local Transport",
-            details: "Local transit and walking"
+            details: "Local transit and walking",
+            route: preferences.coordinates ? {
+              from: preferences.coordinates,
+              to: preferences.coordinates
+            } : undefined
           },
           activities: [
             {
               time: "10:00",
-              title: `Day ${day} Exploration`
+              duration: "12:00",
+              title: `Day ${day} Exploration`,
+              location: preferences.coordinates,
+              category: "Exploration",
+              description: `Discover the hidden gems of ${preferences.destination}`
             },
             {
               time: "14:00",
-              title: "Local Cuisine Experience"
+              duration: "16:00",
+              title: "Local Cuisine Experience",
+              category: "Dining",
+              description: "Immerse yourself in the local food culture"
             },
             {
               time: "16:00",
-              title: "Cultural Activities"
+              duration: "18:00",
+              title: "Cultural Activities",
+              location: preferences.coordinates,
+              category: "Culture",
+              description: "Experience local traditions and customs"
             }
           ]
         });
       }
 
-      // If we have too many days, truncate
       if (result.itinerary.length > preferences.numberOfDays) {
         result.itinerary = result.itinerary.slice(0, preferences.numberOfDays);
       }
