@@ -54,19 +54,20 @@ interface TravelDayCardProps {
   accommodation: AccommodationDetails;
   transportation: TransportationDetails;
   activities: ActivityItem[];
+  startDate?: Date; // Added startDate prop
 }
 
 export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCardProps[] }) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     dragFree: true,
-    containScroll: "trimSnaps",
-    slidesToScroll: 1
+    containScroll: "trimSnaps"
   });
 
   const { toast } = useToast();
   const [currentItinerary, setCurrentItinerary] = useState(itinerary);
   const [removedActivities, setRemovedActivities] = useState<{ [key: number]: ActivityItem[] }>({});
+  const startDate = new Date(); // We can make this configurable later if needed
 
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
@@ -220,6 +221,7 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
               >
                 <TravelDayCard 
                   {...day} 
+                  startDate={startDate}
                   onRemoveActivity={(activityIndex) => handleRemoveActivity(index, activityIndex)}
                   onAddActivity={(activity) => handleAddActivity(index, activity)}
                   onEditActivity={(activityIndex, updatedActivity) => 

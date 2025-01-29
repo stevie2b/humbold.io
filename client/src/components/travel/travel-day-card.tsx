@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format } from "date-fns";
 
 interface ActivityItem {
   time: string;
@@ -348,6 +349,12 @@ function TransportationEditDialog({
   );
 }
 
+function formatDayHeader(startDate: Date, day: number): string {
+  const currentDate = new Date(startDate);
+  currentDate.setDate(currentDate.getDate() + day - 1);
+  return `${format(currentDate, 'EEE')}, ${format(currentDate, 'dd.MM')} (day ${day})`;
+}
+
 export default function TravelDayCard({ 
   day, 
   accommodation, 
@@ -360,30 +367,23 @@ export default function TravelDayCard({
   onEditTransportation,
   recommendations = [],
   isFirstCard = false,
-  isLastCard = false
-}: TravelDayCardProps) {
-  // Calculate if this day is within any accommodation stay period
+  isLastCard = false,
+  startDate = new Date() 
+}: TravelDayCardProps & { startDate?: Date }) {
   const isWithinStay = day >= accommodation.startDay && day <= accommodation.endDay;
   const isCheckInDay = day === accommodation.startDay;
   const isCheckOutDay = day === accommodation.endDay;
 
-  // Only calculate accommodation hours if this day is within the accommodation period
   const accomHours = isWithinStay ? 
     (isCheckInDay ? 
-      // First day: only show from check-in time
       getHourRange(accommodation.checkInTime, "23:59") :
       isCheckOutDay ?
-        // Last day: only show until check-out time
         getHourRange("00:00", accommodation.checkOutTime) :
-        // Middle days: show full day
         getHourRange("00:00", "23:59")
     ) : [];
 
-  // For transportation, handle continuous vs scheduled differently
   const transHours = transportation.type === 'continuous' ?
-    // Continuous transportation shows availability all day
     getHourRange("00:00", "23:59") :
-    // Scheduled transportation only shows during transit times
     transportation.departureTime && transportation.arrivalTime ?
       getHourRange(transportation.departureTime, transportation.arrivalTime) :
       [];
@@ -406,7 +406,7 @@ export default function TravelDayCard({
     >
       <Card className="h-full">
         <CardContent className="p-4 space-y-4">
-          <h3 className="text-lg font-semibold">Day {day}</h3>
+          <h3 className="text-lg font-semibold">{formatDayHeader(startDate, day)}</h3>
 
           {/* Accommodation Section */}
           <div>
