@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ActivityItem {
   time: string;
@@ -23,40 +24,49 @@ interface ActivityItem {
   };
 }
 
-interface TravelDayCardProps {
-  day: number;
-  accommodation: {
-    title: string;
-    details: string;
-    checkInTime?: string;
-    checkOutTime?: string;
-    coordinates?: {
+interface AccommodationDetails {
+  title: string;
+  details: string;
+  checkInTime: string;
+  checkOutTime: string;
+  startDay: number;
+  endDay: number;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+}
+
+interface TransportationDetails {
+  type: 'continuous' | 'scheduled';
+  title: string;
+  details: string;
+  transportMode?: string;
+  flightNumber?: string;
+  departureTime?: string;
+  arrivalTime?: string;
+  route?: {
+    from: {
+      lat: number;
+      lng: number;
+    };
+    to: {
       lat: number;
       lng: number;
     };
   };
-  transportation: {
-    title: string;
-    details: string;
-    arrivalTime?: string;
-    departureTime?: string;
-    route?: {
-      from: {
-        lat: number;
-        lng: number;
-      };
-      to: {
-        lat: number;
-        lng: number;
-      };
-    };
-  };
+}
+
+interface TravelDayCardProps {
+  day: number;
+  accommodation: AccommodationDetails;
+  transportation: TransportationDetails;
   activities: ActivityItem[];
   onRemoveActivity?: (index: number) => void;
   onAddActivity?: (activity: ActivityItem) => void;
   onEditActivity?: (index: number, updatedActivity: ActivityItem) => void;
-  onEditAccommodation?: (updatedAccommodation: any) => void;
-  onEditTransportation?: (updatedTransportation: any) => void;
+  onEditAccommodation?: (updatedAccommodation: AccommodationDetails) => void;
+  onEditTransportation?: (updatedTransportation: TransportationDetails) => void;
   recommendations?: ActivityItem[];
   isFirstCard?: boolean;
   isLastCard?: boolean;
@@ -139,8 +149,8 @@ function AccommodationEditDialog({
   onSave,
   trigger 
 }: { 
-  accommodation: TravelDayCardProps['accommodation']; 
-  onSave: (updatedAccommodation: any) => void;
+  accommodation: AccommodationDetails; 
+  onSave: (updatedAccommodation: AccommodationDetails) => void;
   trigger: React.ReactNode;
 }) {
   const [edited, setEdited] = useState(accommodation);
@@ -156,7 +166,7 @@ function AccommodationEditDialog({
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title">Hotel Name</Label>
             <Input
               id="title"
               value={edited.title}
@@ -176,7 +186,7 @@ function AccommodationEditDialog({
             <Input
               id="checkInTime"
               type="time"
-              value={edited.checkInTime || "15:00"}
+              value={edited.checkInTime}
               onChange={(e) => setEdited({ ...edited, checkInTime: e.target.value })}
             />
           </div>
@@ -185,9 +195,31 @@ function AccommodationEditDialog({
             <Input
               id="checkOutTime"
               type="time"
-              value={edited.checkOutTime || "11:00"}
+              value={edited.checkOutTime}
               onChange={(e) => setEdited({ ...edited, checkOutTime: e.target.value })}
             />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="startDay">Start Day</Label>
+              <Input
+                id="startDay"
+                type="number"
+                min={1}
+                value={edited.startDay}
+                onChange={(e) => setEdited({ ...edited, startDay: parseInt(e.target.value) })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="endDay">End Day</Label>
+              <Input
+                id="endDay"
+                type="number"
+                min={1}
+                value={edited.endDay}
+                onChange={(e) => setEdited({ ...edited, endDay: parseInt(e.target.value) })}
+              />
+            </div>
           </div>
         </div>
         <div className="flex justify-end">
@@ -203,8 +235,8 @@ function TransportationEditDialog({
   onSave,
   trigger 
 }: { 
-  transportation: TravelDayCardProps['transportation']; 
-  onSave: (updatedTransportation: any) => void;
+  transportation: TransportationDetails; 
+  onSave: (updatedTransportation: TransportationDetails) => void;
   trigger: React.ReactNode;
 }) {
   const [edited, setEdited] = useState(transportation);
@@ -220,37 +252,91 @@ function TransportationEditDialog({
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
+            <Label htmlFor="type">Transportation Type</Label>
+            <Select 
+              value={edited.type}
+              onValueChange={(value) => setEdited({ 
+                ...edited, 
+                type: value as 'continuous' | 'scheduled'
+              })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="continuous">Continuous (Car/Bike)</SelectItem>
+                <SelectItem value="scheduled">Scheduled (Flight/Train)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
             <Label htmlFor="title">Title</Label>
             <Input
               id="title"
               value={edited.title}
               onChange={(e) => setEdited({ ...edited, title: e.target.value })}
+              placeholder={edited.type === 'scheduled' ? "Flight to Paris" : "Rental Car"}
             />
           </div>
+
+          {edited.type === 'scheduled' && (
+            <>
+              <div className="grid gap-2">
+                <Label htmlFor="transportMode">Transport Mode</Label>
+                <Select 
+                  value={edited.transportMode}
+                  onValueChange={(value) => setEdited({ ...edited, transportMode: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="flight">Flight</SelectItem>
+                    <SelectItem value="train">Train</SelectItem>
+                    <SelectItem value="bus">Bus</SelectItem>
+                    <SelectItem value="ferry">Ferry</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="flightNumber">Flight/Train Number</Label>
+                <Input
+                  id="flightNumber"
+                  value={edited.flightNumber}
+                  onChange={(e) => setEdited({ ...edited, flightNumber: e.target.value })}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="departureTime">Departure Time</Label>
+                <Input
+                  id="departureTime"
+                  type="time"
+                  value={edited.departureTime}
+                  onChange={(e) => setEdited({ ...edited, departureTime: e.target.value })}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="arrivalTime">Arrival Time</Label>
+                <Input
+                  id="arrivalTime"
+                  type="time"
+                  value={edited.arrivalTime}
+                  onChange={(e) => setEdited({ ...edited, arrivalTime: e.target.value })}
+                />
+              </div>
+            </>
+          )}
+
           <div className="grid gap-2">
-            <Label htmlFor="details">Details</Label>
+            <Label htmlFor="details">Additional Details</Label>
             <Input
               id="details"
               value={edited.details}
               onChange={(e) => setEdited({ ...edited, details: e.target.value })}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="arrivalTime">Arrival Time</Label>
-            <Input
-              id="arrivalTime"
-              type="time"
-              value={edited.arrivalTime || "09:00"}
-              onChange={(e) => setEdited({ ...edited, arrivalTime: e.target.value })}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="departureTime">Departure Time</Label>
-            <Input
-              id="departureTime"
-              type="time"
-              value={edited.departureTime || "10:00"}
-              onChange={(e) => setEdited({ ...edited, departureTime: e.target.value })}
             />
           </div>
         </div>
@@ -276,15 +362,30 @@ export default function TravelDayCard({
   isFirstCard = false,
   isLastCard = false
 }: TravelDayCardProps) {
-  const accomHours = getHourRange(
-    accommodation.checkInTime || "15:00", 
-    accommodation.checkOutTime || "11:00"
-  );
+  // Only show accommodation time indicator if this day is within the accommodation period
+  const shouldShowAccommodation = 
+    day >= accommodation.startDay && 
+    day <= accommodation.endDay;
 
-  const transHours = getHourRange(
-    transportation.arrivalTime || "09:00", 
-    transportation.departureTime || "10:00"
-  );
+  const accomHours = shouldShowAccommodation ? 
+    (day === accommodation.startDay ? 
+      // First day: only show from check-in time
+      getHourRange(accommodation.checkInTime, "23:59") :
+      day === accommodation.endDay ?
+        // Last day: only show until check-out time
+        getHourRange("00:00", accommodation.checkOutTime) :
+        // Middle days: show full day
+        getHourRange("00:00", "23:59")
+    ) : [];
+
+  // For transportation, handle continuous vs scheduled differently
+  const transHours = transportation.type === 'continuous' ?
+    // Continuous transportation shows availability all day
+    getHourRange("00:00", "23:59") :
+    // Scheduled transportation only shows during transit times
+    transportation.departureTime && transportation.arrivalTime ?
+      getHourRange(transportation.departureTime, transportation.arrivalTime) :
+      [];
 
   const activityHours = activities.flatMap(activity => 
     getHourRange(activity.time, activity.duration)
@@ -333,10 +434,20 @@ export default function TravelDayCard({
                 </div>
                 <div className="text-sm text-emerald-600">
                   {accommodation.details}
-                  <div className="mt-1">
-                    <span className="font-medium">Check-in:</span> {accommodation.checkInTime || "15:00"} |{" "}
-                    <span className="font-medium">Check-out:</span> {accommodation.checkOutTime || "11:00"}
-                  </div>
+                  {shouldShowAccommodation && (
+                    <div className="mt-1">
+                      {day === accommodation.startDay && (
+                        <span>
+                          <span className="font-medium">Check-in:</span> {accommodation.checkInTime}
+                        </span>
+                      )}
+                      {day === accommodation.endDay && (
+                        <span>
+                          <span className="font-medium">Check-out:</span> {accommodation.checkOutTime}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="absolute inset-0 flex rounded-lg overflow-hidden">
@@ -374,13 +485,18 @@ export default function TravelDayCard({
               <div className="relative z-10">
                 <div className="text-amber-700 font-medium mb-1">
                   {transportation.title}
+                  {transportation.type === 'scheduled' && transportation.flightNumber && (
+                    <span className="text-sm ml-2">({transportation.flightNumber})</span>
+                  )}
                 </div>
                 <div className="text-sm text-amber-600">
                   {transportation.details}
-                  <div className="mt-1">
-                    <span className="font-medium">Arrival:</span> {transportation.arrivalTime || "09:00"} |{" "}
-                    <span className="font-medium">Departure:</span> {transportation.departureTime || "10:00"}
-                  </div>
+                  {transportation.type === 'scheduled' && (
+                    <div className="mt-1">
+                      <span className="font-medium">Departure:</span> {transportation.departureTime} |{" "}
+                      <span className="font-medium">Arrival:</span> {transportation.arrivalTime}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="absolute inset-0 flex rounded-lg overflow-hidden">

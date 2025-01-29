@@ -16,34 +16,43 @@ interface ActivityItem {
   };
 }
 
-interface TravelDayCardProps {
-  day: number;
-  accommodation: {
-    title: string;
-    details: string;
-    checkInTime?: string;
-    checkOutTime?: string;
-    coordinates?: {
+interface AccommodationDetails {
+  title: string;
+  details: string;
+  checkInTime: string;
+  checkOutTime: string;
+  startDay: number;
+  endDay: number;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+}
+
+interface TransportationDetails {
+  type: 'continuous' | 'scheduled';
+  title: string;
+  details: string;
+  transportMode?: string;
+  flightNumber?: string;
+  departureTime?: string;
+  arrivalTime?: string;
+  route?: {
+    from: {
+      lat: number;
+      lng: number;
+    };
+    to: {
       lat: number;
       lng: number;
     };
   };
-  transportation: {
-    title: string;
-    details: string;
-    arrivalTime?: string;
-    departureTime?: string;
-    route?: {
-      from: {
-        lat: number;
-        lng: number;
-      };
-      to: {
-        lat: number;
-        lng: number;
-      };
-    };
-  };
+}
+
+interface TravelDayCardProps {
+  day: number;
+  accommodation: AccommodationDetails;
+  transportation: TransportationDetails;
   activities: ActivityItem[];
 }
 
@@ -56,11 +65,7 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
   });
 
   const { toast } = useToast();
-
-  // State for managing the itinerary data
   const [currentItinerary, setCurrentItinerary] = useState(itinerary);
-
-  // State for managing removed activities per day
   const [removedActivities, setRemovedActivities] = useState<{ [key: number]: ActivityItem[] }>({});
 
   const scrollPrev = useCallback(() => {
@@ -124,11 +129,12 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
       return newItinerary;
     });
 
+    // Remove the activity from recommendations
     setRemovedActivities(prev => ({
       ...prev,
-      [dayIndex]: (prev[dayIndex] || []).filter(a => 
+      [dayIndex]: prev[dayIndex]?.filter(a => 
         !(a.time === activity.time && a.title === activity.title)
-      )
+      ) || []
     }));
 
     toast({
@@ -137,7 +143,7 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
     });
   };
 
-  const handleEditAccommodation = (dayIndex: number, updatedAccommodation: any) => {
+  const handleEditAccommodation = (dayIndex: number, updatedAccommodation: AccommodationDetails) => {
     setCurrentItinerary(prev => {
       const newItinerary = [...prev];
       newItinerary[dayIndex] = {
@@ -153,7 +159,7 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
     });
   };
 
-  const handleEditTransportation = (dayIndex: number, updatedTransportation: any) => {
+  const handleEditTransportation = (dayIndex: number, updatedTransportation: TransportationDetails) => {
     setCurrentItinerary(prev => {
       const newItinerary = [...prev];
       newItinerary[dayIndex] = {
@@ -174,7 +180,6 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
   return (
     <div className="space-y-6">
       <div className="relative w-full">
-        {/* Navigation Buttons */}
         <div className="hidden md:block">
           <Button
             variant="outline"
@@ -195,7 +200,6 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
           </Button>
         </div>
 
-        {/* Mobile Navigation */}
         <div className="flex justify-between mb-4 md:hidden">
           <Button variant="outline" size="sm" onClick={scrollPrev}>
             <ChevronLeft className="h-4 w-4 mr-2" />
@@ -207,7 +211,6 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
           </Button>
         </div>
 
-        {/* Carousel Container */}
         <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex">
             {currentItinerary.map((day, index) => (
@@ -226,22 +229,19 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
                   onEditTransportation={(updatedTransportation) => 
                     handleEditTransportation(index, updatedTransportation)}
                   recommendations={[
-                    ...(removedActivities[index] || []),
-                    {
-                      time: "09:00",
-                      duration: "12:00",
-                      title: "Local Museum Visit"
-                    },
-                    {
-                      time: "14:00",
-                      duration: "17:00",
-                      title: "City Walking Tour"
-                    },
-                    {
-                      time: "18:00",
-                      duration: "20:00",
-                      title: "Local Cuisine Experience"
-                    }
+                    ...(removedActivities[index] || []).slice(0, 3), 
+                    ...((removedActivities[index]?.length || 0) < 3 ? [
+                      {
+                        time: "09:00",
+                        duration: "12:00",
+                        title: "Local Museum Visit"
+                      },
+                      {
+                        time: "14:00",
+                        duration: "17:00",
+                        title: "City Walking Tour"
+                      }
+                    ].slice(0, 3 - (removedActivities[index]?.length || 0)) : [])
                   ]}
                   isFirstCard={index === 0}
                   isLastCard={index === currentItinerary.length - 1}
