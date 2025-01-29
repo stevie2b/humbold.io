@@ -42,7 +42,7 @@ function LocationSearch({
       // Add the type of place to the search query if provided
       const searchText = searchType ? `${query} ${searchType}` : query;
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchText)}.json?access_token=${token}&types=poi`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchText)}.json?access_token=${token}&limit=5`
       );
       const data = await response.json();
       setSearchResults(data.features || []);

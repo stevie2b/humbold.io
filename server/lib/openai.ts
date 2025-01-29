@@ -116,8 +116,9 @@ export async function generateTravelPlan(preferences: {
       }`;
 
     try {
+      console.log("Sending request to OpenAI...");
       const response = await openai.chat.completions.create({
-        model: "gpt-4", // Using the correct model name
+        model: "gpt-3.5-turbo",
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
         temperature: 0.7,
@@ -130,10 +131,8 @@ export async function generateTravelPlan(preferences: {
 
       const result = JSON.parse(response.choices[0].message.content) as TravelPlan;
 
-      // Ensure we have the correct number of days
       if (result.itinerary.length !== preferences.numberOfDays) {
         console.log(`Incorrect number of days in response (${result.itinerary.length}), adjusting to ${preferences.numberOfDays}`);
-
         while (result.itinerary.length < preferences.numberOfDays) {
           const lastDay = result.itinerary[result.itinerary.length - 1];
           const day = result.itinerary.length + 1;
@@ -184,17 +183,14 @@ export async function generateTravelPlan(preferences: {
       return result;
     } catch (apiError: any) {
       console.error("OpenAI API error:", apiError);
-      // If there's an API error, fall back to basic itinerary
       return generateBasicItinerary(preferences);
     }
   } catch (error: any) {
     console.error("Error generating travel plan:", error);
-    console.log("Using fallback due to error");
     return generateBasicItinerary(preferences);
   }
 }
 
-// Helper function to generate a basic itinerary when OpenAI is not available
 function generateBasicItinerary(preferences: {
   season: string;
   specificDate?: Date;
