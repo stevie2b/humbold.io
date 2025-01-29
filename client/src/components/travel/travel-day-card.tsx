@@ -17,12 +17,15 @@ import { format } from "date-fns";
 
 // Add LocationSearch component for reusability
 function LocationSearch({ 
-  onLocationSelect 
+  onLocationSelect,
+  initialAddress = "" 
 }: { 
-  onLocationSelect: (location: { lat: number; lng: number; address: string }) => void 
+  onLocationSelect: (location: { lat: number; lng: number; address: string }) => void;
+  initialAddress?: string;
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState(initialAddress);
   const [searchResults, setSearchResults] = useState<Array<{
     place_name: string;
     center: [number, number];
@@ -68,6 +71,14 @@ function LocationSearch({
           <Search className="h-4 w-4" />
         </Button>
       </div>
+
+      {selectedAddress && (
+        <div className="text-sm text-muted-foreground bg-accent/50 p-2 rounded-md flex items-center gap-2">
+          <MapPin className="h-4 w-4" />
+          {selectedAddress}
+        </div>
+      )}
+
       {searchResults.length > 0 && (
         <div className="mt-2 border rounded-md divide-y">
           {searchResults.map((result, index) => (
@@ -80,6 +91,7 @@ function LocationSearch({
                   lng: result.center[0],
                   address: result.place_name
                 });
+                setSelectedAddress(result.place_name);
                 setSearchResults([]);
                 setSearchQuery('');
               }}
@@ -372,7 +384,7 @@ function TransportationEditDialog({
               <div>
                 <Label className="mb-2">From Location</Label>
                 <LocationSearch 
-                  onLocationSelect={({ lat, lng }) => {
+                  onLocationSelect={({ lat, lng, address }) => {
                     setEdited({
                       ...edited,
                       route: {
@@ -386,7 +398,7 @@ function TransportationEditDialog({
               <div>
                 <Label className="mb-2">To Location</Label>
                 <LocationSearch 
-                  onLocationSelect={({ lat, lng }) => {
+                  onLocationSelect={({ lat, lng, address }) => {
                     setEdited({
                       ...edited,
                       route: {

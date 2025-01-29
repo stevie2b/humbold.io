@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 
+// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export interface TravelPlan {
@@ -115,75 +116,81 @@ export async function generateTravelPlan(preferences: {
         "recommendations": ["Recommendation 1", "Recommendation 2"]
       }`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      temperature: 0.7,
-    });
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // Updated to use the latest model
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+      });
 
-    if (!response.choices[0].message.content) {
-      console.log("No OpenAI response content, using fallback");
+      if (!response.choices[0].message.content) {
+        console.log("No OpenAI response content, using fallback");
+        return generateBasicItinerary(preferences);
+      }
+
+      const result = JSON.parse(response.choices[0].message.content) as TravelPlan;
+
+      // Ensure we have the correct number of days
+      if (result.itinerary.length !== preferences.numberOfDays) {
+        console.log(`Incorrect number of days in response (${result.itinerary.length}), adjusting to ${preferences.numberOfDays}`);
+
+        while (result.itinerary.length < preferences.numberOfDays) {
+          const lastDay = result.itinerary[result.itinerary.length - 1];
+          const day = result.itinerary.length + 1;
+          result.itinerary.push({
+            day,
+            accommodation: lastDay.accommodation,
+            transportation: {
+              title: "Local Transport",
+              details: "Local transit and walking",
+              route: preferences.coordinates ? {
+                from: preferences.coordinates,
+                to: preferences.coordinates
+              } : undefined
+            },
+            activities: [
+              {
+                time: "10:00",
+                duration: "2:00",
+                title: `Day ${day} Exploration`,
+                location: preferences.coordinates,
+                category: "Exploration",
+                description: `Discover more hidden gems of ${preferences.destination}`
+              },
+              {
+                time: "14:00",
+                duration: "2:00",
+                title: "Local Experience",
+                category: "Culture",
+                description: "Immerse yourself in local culture and traditions"
+              },
+              {
+                time: "16:00",
+                duration: "2:00",
+                title: "Evening Activities",
+                location: preferences.coordinates,
+                category: "Entertainment",
+                description: "Enjoy local entertainment and nightlife"
+              }
+            ]
+          });
+        }
+
+        if (result.itinerary.length > preferences.numberOfDays) {
+          result.itinerary = result.itinerary.slice(0, preferences.numberOfDays);
+        }
+      }
+
+      return result;
+    } catch (apiError: any) {
+      console.error("OpenAI API error:", apiError);
+      // If there's an API error, fall back to basic itinerary
       return generateBasicItinerary(preferences);
     }
-
-    const result = JSON.parse(response.choices[0].message.content) as TravelPlan;
-
-    // Ensure we have the correct number of days
-    if (result.itinerary.length !== preferences.numberOfDays) {
-      console.log(`Incorrect number of days in response (${result.itinerary.length}), adjusting to ${preferences.numberOfDays}`);
-
-      while (result.itinerary.length < preferences.numberOfDays) {
-        const lastDay = result.itinerary[result.itinerary.length - 1];
-        const day = result.itinerary.length + 1;
-        result.itinerary.push({
-          day,
-          accommodation: lastDay.accommodation,
-          transportation: {
-            title: "Local Transport",
-            details: "Local transit and walking",
-            route: preferences.coordinates ? {
-              from: preferences.coordinates,
-              to: preferences.coordinates
-            } : undefined
-          },
-          activities: [
-            {
-              time: "10:00",
-              duration: "12:00",
-              title: `Day ${day} Exploration`,
-              location: preferences.coordinates,
-              category: "Exploration",
-              description: `Discover more hidden gems of ${preferences.destination}`
-            },
-            {
-              time: "14:00",
-              duration: "16:00",
-              title: "Local Experience",
-              category: "Culture",
-              description: "Immerse yourself in local culture and traditions"
-            },
-            {
-              time: "16:00",
-              duration: "18:00",
-              title: "Evening Activities",
-              location: preferences.coordinates,
-              category: "Entertainment",
-              description: "Enjoy local entertainment and nightlife"
-            }
-          ]
-        });
-      }
-
-      if (result.itinerary.length > preferences.numberOfDays) {
-        result.itinerary = result.itinerary.slice(0, preferences.numberOfDays);
-      }
-    }
-
-    return result;
   } catch (error: any) {
     console.error("Error generating travel plan:", error);
-    console.log("Using fallback due to OpenAI error");
+    console.log("Using fallback due to error");
     return generateBasicItinerary(preferences);
   }
 }
@@ -230,7 +237,7 @@ function generateBasicItinerary(preferences: {
     activities: [
       {
         time: "09:00",
-        duration: "12:00",
+        duration: "3:00",
         title: i === 0
           ? "Welcome Orientation"
           : `${activityTypes[i % activityTypes.length]} Activity`,
@@ -240,14 +247,14 @@ function generateBasicItinerary(preferences: {
       },
       {
         time: "13:00",
-        duration: "14:00",
+        duration: "1:00",
         title: "Lunch Break and Rest",
         category: "Dining",
         description: "Enjoy local cuisine"
       },
       {
         time: "15:00",
-        duration: "18:00",
+        duration: "3:00",
         title: i === numDays - 1
           ? "Prepare for Departure"
           : `${activityTypes[(i + 2) % activityTypes.length]} Experience`,
