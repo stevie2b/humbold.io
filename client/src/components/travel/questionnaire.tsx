@@ -56,6 +56,68 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+const searchDestinations = async (query: string) => {
+  if (!query || query.length < 2) return [];
+
+  try {
+    // First try Mapbox geocoding for cities and countries
+    const mapboxToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+    const response = await fetch(
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?types=place,country&access_token=${mapboxToken}`
+    );
+
+    if (!response.ok) {
+      throw new Error('Mapbox geocoding failed');
+    }
+
+    const data = await response.json();
+    return data.features.map((feature: any) => {
+      const context = feature.context || [];
+      const country = context.find((c: any) => c.id.startsWith('country'))?.text || '';
+
+      return {
+        id: Math.floor(Math.random() * 1000000), // You might want to generate this differently
+        name: feature.text,
+        description: `${feature.place_name}`,
+        seasonalRatings: {
+          spring: 0,
+          summer: 0,
+          autumn: 0,
+          winter: 0
+        },
+        coordinates: {
+          lng: feature.center[0],
+          lat: feature.center[1]
+        }
+      };
+    });
+  } catch (error) {
+    console.error("Search error:", error);
+    // Fallback to existing API
+    const response = await fetch(`/api/destinations/search?q=${encodeURIComponent(query)}`);
+    if (!response.ok) {
+      throw new Error('Failed to search destinations');
+    }
+    const data = await response.json();
+    return (data || []).map((dest: any) => {
+      // Ensure each destination has a valid ID
+      const id = typeof dest.id === 'number' ? dest.id : Math.floor(Math.random() * 1000000);
+      return {
+        id,
+        name: dest.name || 'Unknown Destination',
+        description: dest.description || '',
+        seasonalRatings: dest.seasonalRatings || {
+          spring: 0,
+          summer: 0,
+          autumn: 0,
+          winter: 0
+        },
+        imageUrl: dest.imageUrl || ''
+      };
+    });
+  }
+};
+
 export default function Questionnaire() {
   const [step, setStep] = useState(1);
   const [endDateOpen, setEndDateOpen] = useState(false);
@@ -83,39 +145,18 @@ export default function Questionnaire() {
       }
 
       try {
-        const response = await fetch(`/api/destinations/search?q=${encodeURIComponent(query)}`);
-        if (!response.ok) {
-          const errorText = await response.text();
-          toast({
-            title: "Search Error",
-            description: "Failed to search destinations. Please try again.",
-            variant: "destructive",
-          });
-          throw new Error(errorText);
-        }
-        const data = await response.json();
-        return (data || []).map((dest: any) => {
-          // Ensure each destination has a valid ID
-          const id = typeof dest.id === 'number' ? dest.id : Math.floor(Math.random() * 1000000);
-          return {
-            id,
-            name: dest.name || 'Unknown Destination',
-            description: dest.description || '',
-            seasonalRatings: dest.seasonalRatings || {
-              spring: 0,
-              summer: 0,
-              autumn: 0,
-              winter: 0
-            },
-            imageUrl: dest.imageUrl || ''
-          };
-        });
+        return await searchDestinations(query);
       } catch (error) {
         console.error("Search error:", error);
+        toast({
+          title: "Search Error",
+          description: "Failed to search destinations. Please try again.",
+          variant: "destructive",
+        });
         return [];
       }
     },
-    enabled: !!searchQuery && searchQuery.length > 2,
+    enabled: !!searchQuery && searchQuery.length >= 2,
   });
 
   const getCurrentSeason = () => {
