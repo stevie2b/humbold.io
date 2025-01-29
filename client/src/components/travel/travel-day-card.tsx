@@ -167,6 +167,7 @@ function ActivityEditDialog({
               });
             }}
             searchType="venue" // This will help find specific places
+            initialAddress={activity.title}
           />
         </div>
         <div className="flex justify-end">
