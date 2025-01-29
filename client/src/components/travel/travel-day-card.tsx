@@ -62,6 +62,22 @@ interface TravelDayCardProps {
   isLastCard?: boolean;
 }
 
+function getHourRange(startTime: string, endTime?: string): number[] {
+  const getHours = (time: string) => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours + minutes / 60;
+  };
+
+  const start = getHours(startTime);
+  const end = endTime ? getHours(endTime) : start + 1;
+
+  const hours: number[] = [];
+  for (let hour = Math.floor(start); hour < Math.ceil(end); hour++) {
+    hours.push(hour);
+  }
+  return hours;
+}
+
 function ActivityEditDialog({ 
   activity, 
   onSave,
@@ -97,7 +113,7 @@ function ActivityEditDialog({
             <Input
               id="duration"
               type="time"
-              value={editedActivity.duration || ''} // Handle undefined duration
+              value={editedActivity.duration || ''} 
               onChange={(e) => setEditedActivity({ ...editedActivity, duration: e.target.value })}
             />
           </div>
@@ -118,26 +134,132 @@ function ActivityEditDialog({
   );
 }
 
-function getTimeQuarters(startTime: string, endTime?: string): number[] {
-  const [startHours, startMinutes] = startTime.split(':').map(Number);
-  const startTimeInMinutes = startHours * 60 + (startMinutes || 0);
+function AccommodationEditDialog({ 
+  accommodation, 
+  onSave,
+  trigger 
+}: { 
+  accommodation: TravelDayCardProps['accommodation']; 
+  onSave: (updatedAccommodation: any) => void;
+  trigger: React.ReactNode;
+}) {
+  const [edited, setEdited] = useState(accommodation);
 
-  const endTimeInMinutes = endTime ? (() => {
-    const [endHours, endMinutes] = endTime.split(':').map(Number);
-    return endHours * 60 + (endMinutes || 0);
-  })() : startTimeInMinutes + 60;  // Default 1 hour duration
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        {trigger}
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit Accommodation</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              value={edited.title}
+              onChange={(e) => setEdited({ ...edited, title: e.target.value })}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="details">Details</Label>
+            <Input
+              id="details"
+              value={edited.details}
+              onChange={(e) => setEdited({ ...edited, details: e.target.value })}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="checkInTime">Check-in Time</Label>
+            <Input
+              id="checkInTime"
+              type="time"
+              value={edited.checkInTime || "15:00"}
+              onChange={(e) => setEdited({ ...edited, checkInTime: e.target.value })}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="checkOutTime">Check-out Time</Label>
+            <Input
+              id="checkOutTime"
+              type="time"
+              value={edited.checkOutTime || "11:00"}
+              onChange={(e) => setEdited({ ...edited, checkOutTime: e.target.value })}
+            />
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={() => onSave(edited)}>Save Changes</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
-  const quarters = [];
-  for (let i = 0; i < 4; i++) {
-    const quarterStart = i * 360;  // 360 minutes = 6 hours
-    const quarterEnd = (i + 1) * 360;
+function TransportationEditDialog({ 
+  transportation, 
+  onSave,
+  trigger 
+}: { 
+  transportation: TravelDayCardProps['transportation']; 
+  onSave: (updatedTransportation: any) => void;
+  trigger: React.ReactNode;
+}) {
+  const [edited, setEdited] = useState(transportation);
 
-    if (startTimeInMinutes <= quarterEnd && endTimeInMinutes >= quarterStart) {
-      quarters.push(i);
-    }
-  }
-
-  return quarters;
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        {trigger}
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit Transportation</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              value={edited.title}
+              onChange={(e) => setEdited({ ...edited, title: e.target.value })}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="details">Details</Label>
+            <Input
+              id="details"
+              value={edited.details}
+              onChange={(e) => setEdited({ ...edited, details: e.target.value })}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="arrivalTime">Arrival Time</Label>
+            <Input
+              id="arrivalTime"
+              type="time"
+              value={edited.arrivalTime || "09:00"}
+              onChange={(e) => setEdited({ ...edited, arrivalTime: e.target.value })}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="departureTime">Departure Time</Label>
+            <Input
+              id="departureTime"
+              type="time"
+              value={edited.departureTime || "10:00"}
+              onChange={(e) => setEdited({ ...edited, departureTime: e.target.value })}
+            />
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={() => onSave(edited)}>Save Changes</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export default function TravelDayCard({ 
@@ -154,13 +276,19 @@ export default function TravelDayCard({
   isFirstCard = false,
   isLastCard = false
 }: TravelDayCardProps) {
-  const checkInTime = accommodation.checkInTime || "15:00";
-  const checkOutTime = accommodation.checkOutTime || "11:00";
-  const arrivalTime = transportation.arrivalTime || "09:00";
-  const departureTime = transportation.departureTime || "10:00";
+  const accomHours = getHourRange(
+    accommodation.checkInTime || "15:00", 
+    accommodation.checkOutTime || "11:00"
+  );
 
-  const accomQuarters = getTimeQuarters(checkInTime, checkOutTime);
-  const transQuarters = getTimeQuarters(arrivalTime, departureTime);
+  const transHours = getHourRange(
+    transportation.arrivalTime || "09:00", 
+    transportation.departureTime || "10:00"
+  );
+
+  const activityHours = activities.flatMap(activity => 
+    getHourRange(activity.time, activity.duration)
+  );
 
   const containerClasses = `
     h-full
@@ -183,26 +311,41 @@ export default function TravelDayCard({
             <div className="flex justify-between items-center mb-2">
               <h4 className="text-sm font-medium text-emerald-700">Accommodation</h4>
               {onEditAccommodation && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  onClick={() => onEditAccommodation(accommodation)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
+                <AccommodationEditDialog
+                  accommodation={accommodation}
+                  onSave={onEditAccommodation}
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  }
+                />
               )}
             </div>
-            <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-200">
-              <div className="text-emerald-700 font-medium mb-1">
-                {accommodation.title}
-              </div>
-              <div className="text-sm text-emerald-600">
-                {accommodation.details}
-                <div className="mt-1">
-                  <span className="font-medium">Check-in:</span> {accommodation.checkInTime || "15:00"} |{" "}
-                  <span className="font-medium">Check-out:</span> {accommodation.checkOutTime || "11:00"}
+            <div className="relative bg-emerald-50 rounded-lg p-3 border border-emerald-200">
+              <div className="relative z-10">
+                <div className="text-emerald-700 font-medium mb-1">
+                  {accommodation.title}
                 </div>
+                <div className="text-sm text-emerald-600">
+                  {accommodation.details}
+                  <div className="mt-1">
+                    <span className="font-medium">Check-in:</span> {accommodation.checkInTime || "15:00"} |{" "}
+                    <span className="font-medium">Check-out:</span> {accommodation.checkOutTime || "11:00"}
+                  </div>
+                </div>
+              </div>
+              <div className="absolute inset-0 flex rounded-lg overflow-hidden">
+                {Array.from({ length: 24 }, (_, i) => (
+                  <div 
+                    key={i}
+                    className={`flex-1 ${accomHours.includes(i) ? 'bg-emerald-200/50' : ''}`}
+                  />
+                ))}
               </div>
             </div>
           </div>
@@ -212,26 +355,41 @@ export default function TravelDayCard({
             <div className="flex justify-between items-center mb-2">
               <h4 className="text-sm font-medium text-amber-700">Transportation</h4>
               {onEditTransportation && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  onClick={() => onEditTransportation(transportation)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
+                <TransportationEditDialog
+                  transportation={transportation}
+                  onSave={onEditTransportation}
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  }
+                />
               )}
             </div>
-            <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
-              <div className="text-amber-700 font-medium mb-1">
-                {transportation.title}
-              </div>
-              <div className="text-sm text-amber-600">
-                {transportation.details}
-                <div className="mt-1">
-                  <span className="font-medium">Arrival:</span> {transportation.arrivalTime || "09:00"} |{" "}
-                  <span className="font-medium">Departure:</span> {transportation.departureTime || "10:00"}
+            <div className="relative bg-amber-50 rounded-lg p-3 border border-amber-200">
+              <div className="relative z-10">
+                <div className="text-amber-700 font-medium mb-1">
+                  {transportation.title}
                 </div>
+                <div className="text-sm text-amber-600">
+                  {transportation.details}
+                  <div className="mt-1">
+                    <span className="font-medium">Arrival:</span> {transportation.arrivalTime || "09:00"} |{" "}
+                    <span className="font-medium">Departure:</span> {transportation.departureTime || "10:00"}
+                  </div>
+                </div>
+              </div>
+              <div className="absolute inset-0 flex rounded-lg overflow-hidden">
+                {Array.from({ length: 24 }, (_, i) => (
+                  <div 
+                    key={i}
+                    className={`flex-1 ${transHours.includes(i) ? 'bg-amber-200/50' : ''}`}
+                  />
+                ))}
               </div>
             </div>
           </div>
@@ -243,12 +401,12 @@ export default function TravelDayCard({
               {activities.map((activity, index) => (
                 <div 
                   key={index} 
-                  className="bg-blue-50 rounded-lg p-3 border border-blue-200 flex items-center justify-between"
+                  className="relative bg-blue-50 rounded-lg p-3 border border-blue-200 flex items-center justify-between"
                 >
-                  <div className="flex-1">
+                  <div className="relative z-10 flex-1">
                     <div className="flex items-center space-x-2">
                       <span className="text-blue-600 font-medium">
-                        {activity.time} 
+                        {activity.time}
                         {activity.duration && ` - ${activity.duration}`}
                       </span>
                       <span className="text-blue-700">
@@ -256,7 +414,7 @@ export default function TravelDayCard({
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-1">
+                  <div className="relative z-10 flex items-center space-x-1">
                     {onEditActivity && (
                       <ActivityEditDialog
                         activity={activity}
@@ -283,45 +441,69 @@ export default function TravelDayCard({
                       </Button>
                     )}
                   </div>
+                  <div className="absolute inset-0 flex rounded-lg overflow-hidden">
+                    {Array.from({ length: 24 }, (_, i) => {
+                      const hours = getHourRange(activity.time, activity.duration);
+                      return (
+                        <div 
+                          key={i}
+                          className={`flex-1 ${hours.includes(i) ? 'bg-blue-200/50' : ''}`}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Recommendations Section */}
-          <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Recommended Activities</h4>
-            <div className="space-y-2">
-              {recommendations.map((activity, index) => (
-                <div 
-                  key={index}
-                  className="bg-gray-50 rounded-lg p-3 border border-gray-200 flex items-center justify-between"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-gray-600 font-medium">
-                        {activity.time}
-                        {activity.duration && ` - ${activity.duration}`}
-                      </span>
-                      <span className="text-gray-700">
-                        {activity.title}
-                      </span>
+          {recommendations.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Recommended Activities</h4>
+              <div className="space-y-2">
+                {recommendations.map((activity, index) => (
+                  <div 
+                    key={index}
+                    className="relative bg-gray-50 rounded-lg p-3 border border-gray-200 flex items-center justify-between"
+                  >
+                    <div className="relative z-10 flex-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-gray-600 font-medium">
+                          {activity.time}
+                          {activity.duration && ` - ${activity.duration}`}
+                        </span>
+                        <span className="text-gray-700">
+                          {activity.title}
+                        </span>
+                      </div>
+                    </div>
+                    {onAddActivity && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="relative z-10 h-8 w-8 p-0"
+                        onClick={() => onAddActivity(activity)}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <div className="absolute inset-0 flex rounded-lg overflow-hidden">
+                      {Array.from({ length: 24 }, (_, i) => {
+                        const hours = getHourRange(activity.time, activity.duration);
+                        return (
+                          <div 
+                            key={i}
+                            className={`flex-1 ${hours.includes(i) ? 'bg-gray-200/50' : ''}`}
+                          />
+                        );
+                      })}
                     </div>
                   </div>
-                  {onAddActivity && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      onClick={() => onAddActivity(activity)}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </motion.div>
