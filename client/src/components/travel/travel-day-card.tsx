@@ -352,7 +352,7 @@ function TransportationEditDialog({
 function formatDayHeader(startDate: Date, day: number): string {
   const currentDate = new Date(startDate);
   currentDate.setDate(currentDate.getDate() + day - 1);
-  return `${format(currentDate, 'EEE')}, ${format(currentDate, 'dd.MM')} (day ${day})`;
+  return `${format(currentDate, 'EEE')}, ${format(currentDate, 'dd.MM')}. (day ${day})`;
 }
 
 export default function TravelDayCard({ 
