@@ -379,6 +379,19 @@ export default function TravelDayCard({
         getHourRange("00:00", "23:59")
     ) : [];
 
+  // For transportation, handle continuous vs scheduled differently
+  const transHours = transportation.type === 'continuous' ?
+    // Continuous transportation shows availability all day
+    getHourRange("00:00", "23:59") :
+    // Scheduled transportation only shows during transit times
+    transportation.departureTime && transportation.arrivalTime ?
+      getHourRange(transportation.departureTime, transportation.arrivalTime) :
+      [];
+
+  const activityHours = activities.flatMap(activity => 
+    getHourRange(activity.time, activity.duration)
+  );
+
   const containerClasses = `
     h-full
     ${isFirstCard ? 'pr-0' : isLastCard ? 'pl-0' : 'px-0'}
