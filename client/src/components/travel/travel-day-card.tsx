@@ -1,6 +1,6 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { X, Plus, Pencil } from "lucide-react";
+import { X, Plus, Pencil, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import {
@@ -405,15 +405,34 @@ export default function TravelDayCard({
       className={containerClasses}
     >
       <Card className="h-full">
-        <CardContent className="p-4 space-y-4">
-          <h3 className="text-lg font-semibold">{formatDayHeader(startDate, day)}</h3>
+        <div className="relative h-48 overflow-hidden rounded-t-lg">
+          <img 
+            src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${
+              accommodation.coordinates 
+                ? `${accommodation.coordinates.lng},${accommodation.coordinates.lat},12,0`
+                : '0,0,2,0'
+            }/600x300@2x?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}`}
+            alt={`Map of ${accommodation.title}`}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/90">
+            <div className="absolute bottom-4 left-4">
+              <h3 className="text-xl font-semibold text-white">
+                {formatDayHeader(startDate, day)}
+              </h3>
+            </div>
+          </div>
+        </div>
 
-          {/* Accommodation Section */}
+        <CardContent className="p-4 space-y-4">
           <div>
             <div className="flex justify-between items-center mb-2">
-              <h4 className="text-sm font-medium text-emerald-700">
-                {isWithinStay ? `Stay at ${accommodation.title}` : 'No Accommodation'}
-              </h4>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-emerald-600" />
+                <h4 className="text-sm font-medium text-emerald-700">
+                  {isWithinStay ? `Stay at ${accommodation.title}` : 'No Accommodation'}
+                </h4>
+              </div>
               {onEditAccommodation && (
                 <AccommodationEditDialog
                   accommodation={accommodation}
@@ -470,7 +489,6 @@ export default function TravelDayCard({
             </div>
           </div>
 
-          {/* Transportation Section */}
           <div>
             <div className="flex justify-between items-center mb-2">
               <h4 className="text-sm font-medium text-amber-700">Transportation</h4>
@@ -519,7 +537,6 @@ export default function TravelDayCard({
             </div>
           </div>
 
-          {/* Activities Section */}
           <div>
             <h4 className="text-sm font-medium text-blue-700 mb-2">Activities</h4>
             <div className="space-y-2">
@@ -582,7 +599,6 @@ export default function TravelDayCard({
             </div>
           </div>
 
-          {/* Recommendations Section */}
           {recommendations.length > 0 && (
             <div>
               <h4 className="text-sm font-medium text-gray-700 mb-2">Recommended Activities</h4>

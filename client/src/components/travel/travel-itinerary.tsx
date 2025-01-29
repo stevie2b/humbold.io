@@ -182,7 +182,7 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
   const mapLocations = currentItinerary.flatMap(day => {
     const locations = [];
 
-    // Add accommodation
+    // Add accommodation coordinates
     if (day.accommodation.coordinates) {
       locations.push({
         title: day.accommodation.title,
@@ -192,23 +192,23 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
       });
     }
 
-    // Add transportation routes
+    // Add transportation route points
     if (day.transportation.route) {
       locations.push({
-        title: day.transportation.title,
+        title: `${day.transportation.title} (Departure)`,
         coordinates: day.transportation.route.from,
         type: 'transportation' as const,
         day: day.day
       });
       locations.push({
-        title: `${day.transportation.title} (Destination)`,
+        title: `${day.transportation.title} (Arrival)`,
         coordinates: day.transportation.route.to,
         type: 'transportation' as const,
         day: day.day
       });
     }
 
-    // Add activities
+    // Add activity locations
     day.activities.forEach(activity => {
       if (activity.location) {
         locations.push({
@@ -246,7 +246,9 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
         </div>
       </div>
 
-      {viewMode === 'cards' ? (
+      {viewMode === 'map' ? (
+        <JourneyMap locations={mapLocations} className="h-[600px] mb-6" />
+      ) : (
         <div className="relative w-full">
           <div className="hidden md:block">
             <Button
@@ -320,8 +322,6 @@ export default function TravelItinerary({ itinerary }: { itinerary: TravelDayCar
             </div>
           </div>
         </div>
-      ) : (
-        <JourneyMap locations={mapLocations} className="h-[600px] mb-6" />
       )}
 
       <div className="flex justify-center">
