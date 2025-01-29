@@ -2,6 +2,7 @@ import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { Layout } from "@/components/layout/layout";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 
@@ -9,6 +10,9 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/profile" component={() => <div>Profile Coming Soon</div>} />
+      <Route path="/itineraries" component={() => <div>My Itineraries Coming Soon</div>} />
+      <Route path="/explore" component={() => <div>Explore Coming Soon</div>} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -17,7 +21,9 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router />
+      <Layout>
+        <Router />
+      </Layout>
       <Toaster />
     </QueryClientProvider>
   );
