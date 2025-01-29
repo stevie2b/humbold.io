@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { X, Plus, Pencil, MapPin } from "lucide-react";
+import { X, Plus, Pencil, MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import {
@@ -15,80 +15,85 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 
-interface ActivityItem {
-  time: string;
-  title: string;
-  duration?: string;
-  location?: {
-    lat: number;
-    lng: number;
-  };
-}
+// Add LocationSearch component for reusability
+function LocationSearch({ 
+  onLocationSelect 
+}: { 
+  onLocationSelect: (location: { lat: number; lng: number; address: string }) => void 
+}) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<Array<{
+    place_name: string;
+    center: [number, number];
+  }>>([]);
 
-interface AccommodationDetails {
-  title: string;
-  details: string;
-  checkInTime: string;
-  checkOutTime: string;
-  startDay: number;
-  endDay: number;
-  coordinates?: {
-    lat: number;
-    lng: number;
-  };
-}
+  const searchLocation = async (query: string) => {
+    if (!query.trim()) return;
 
-interface TransportationDetails {
-  type: 'continuous' | 'scheduled';
-  title: string;
-  details: string;
-  transportMode?: string;
-  flightNumber?: string;
-  departureTime?: string;
-  arrivalTime?: string;
-  route?: {
-    from: {
-      lat: number;
-      lng: number;
-    };
-    to: {
-      lat: number;
-      lng: number;
-    };
-  };
-}
-
-interface TravelDayCardProps {
-  day: number;
-  accommodation: AccommodationDetails;
-  transportation: TransportationDetails;
-  activities: ActivityItem[];
-  onRemoveActivity?: (index: number) => void;
-  onAddActivity?: (activity: ActivityItem) => void;
-  onEditActivity?: (index: number, updatedActivity: ActivityItem) => void;
-  onEditAccommodation?: (updatedAccommodation: AccommodationDetails) => void;
-  onEditTransportation?: (updatedTransportation: TransportationDetails) => void;
-  recommendations?: ActivityItem[];
-  isFirstCard?: boolean;
-  isLastCard?: boolean;
-}
-
-function getHourRange(startTime: string, endTime?: string): number[] {
-  const getHours = (time: string) => {
-    const [hours, minutes] = time.split(':').map(Number);
-    return hours + minutes / 60;
+    setIsSearching(true);
+    try {
+      const token = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}`
+      );
+      const data = await response.json();
+      setSearchResults(data.features || []);
+    } catch (error) {
+      console.error('Error searching location:', error);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
-  const start = getHours(startTime);
-  const end = endTime ? getHours(endTime) : start + 1;
-
-  const hours: number[] = [];
-  for (let hour = Math.floor(start); hour < Math.ceil(end); hour++) {
-    hours.push(hour);
-  }
-  return hours;
+  return (
+    <div className="grid gap-2">
+      <Label>Search Address</Label>
+      <div className="flex gap-2">
+        <Input
+          placeholder="Enter address..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              searchLocation(searchQuery);
+            }
+          }}
+        />
+        <Button 
+          variant="secondary"
+          onClick={() => searchLocation(searchQuery)}
+          disabled={isSearching}
+        >
+          <Search className="h-4 w-4" />
+        </Button>
+      </div>
+      {searchResults.length > 0 && (
+        <div className="mt-2 border rounded-md divide-y">
+          {searchResults.map((result, index) => (
+            <button
+              key={index}
+              className="w-full px-3 py-2 text-left hover:bg-accent text-sm"
+              onClick={() => {
+                onLocationSelect({
+                  lat: result.center[1],
+                  lng: result.center[0],
+                  address: result.place_name
+                });
+                setSearchResults([]);
+                setSearchQuery('');
+              }}
+            >
+              {result.place_name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
+// Update ActivityEditDialog to include LocationSearch
 function ActivityEditDialog({ 
   activity, 
   onSave,
@@ -136,6 +141,16 @@ function ActivityEditDialog({
               onChange={(e) => setEditedActivity({ ...editedActivity, title: e.target.value })}
             />
           </div>
+
+          <LocationSearch 
+            onLocationSelect={({ lat, lng }) => {
+              setEditedActivity({
+                ...editedActivity,
+                location: { lat, lng }
+              });
+            }}
+          />
+
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="activityLatitude">Latitude</Label>
@@ -179,6 +194,7 @@ function ActivityEditDialog({
   );
 }
 
+// Update AccommodationEditDialog to include LocationSearch
 function AccommodationEditDialog({ 
   accommodation, 
   onSave,
@@ -216,6 +232,16 @@ function AccommodationEditDialog({
               onChange={(e) => setEdited({ ...edited, details: e.target.value })}
             />
           </div>
+
+          <LocationSearch 
+            onLocationSelect={({ lat, lng }) => {
+              setEdited({
+                ...edited,
+                coordinates: { lat, lng }
+              });
+            }}
+          />
+
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="latitude">Latitude</Label>
@@ -250,6 +276,7 @@ function AccommodationEditDialog({
               />
             </div>
           </div>
+
           <div className="grid gap-2">
             <Label htmlFor="checkInTime">Check-in Time</Label>
             <Input
@@ -495,6 +522,81 @@ function TransportationEditDialog({
     </Dialog>
   );
 }
+
+interface ActivityItem {
+  time: string;
+  title: string;
+  duration?: string;
+  location?: {
+    lat: number;
+    lng: number;
+  };
+}
+
+interface AccommodationDetails {
+  title: string;
+  details: string;
+  checkInTime: string;
+  checkOutTime: string;
+  startDay: number;
+  endDay: number;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+}
+
+interface TransportationDetails {
+  type: 'continuous' | 'scheduled';
+  title: string;
+  details: string;
+  transportMode?: string;
+  flightNumber?: string;
+  departureTime?: string;
+  arrivalTime?: string;
+  route?: {
+    from: {
+      lat: number;
+      lng: number;
+    };
+    to: {
+      lat: number;
+      lng: number;
+    };
+  };
+}
+
+interface TravelDayCardProps {
+  day: number;
+  accommodation: AccommodationDetails;
+  transportation: TransportationDetails;
+  activities: ActivityItem[];
+  onRemoveActivity?: (index: number) => void;
+  onAddActivity?: (activity: ActivityItem) => void;
+  onEditActivity?: (index: number, updatedActivity: ActivityItem) => void;
+  onEditAccommodation?: (updatedAccommodation: AccommodationDetails) => void;
+  onEditTransportation?: (updatedTransportation: TransportationDetails) => void;
+  recommendations?: ActivityItem[];
+  isFirstCard?: boolean;
+  isLastCard?: boolean;
+}
+
+function getHourRange(startTime: string, endTime?: string): number[] {
+  const getHours = (time: string) => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours + minutes / 60;
+  };
+
+  const start = getHours(startTime);
+  const end = endTime ? getHours(endTime) : start + 1;
+
+  const hours: number[] = [];
+  for (let hour = Math.floor(start); hour < Math.ceil(end); hour++) {
+    hours.push(hour);
+  }
+  return hours;
+}
+
 
 function formatDayHeader(startDate: Date, day: number): string {
   const currentDate = new Date(startDate);
