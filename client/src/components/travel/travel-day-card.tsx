@@ -136,6 +136,40 @@ function ActivityEditDialog({
               onChange={(e) => setEditedActivity({ ...editedActivity, title: e.target.value })}
             />
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="activityLatitude">Latitude</Label>
+              <Input
+                id="activityLatitude"
+                type="number"
+                step="0.000001"
+                value={editedActivity.location?.lat || ''}
+                onChange={(e) => setEditedActivity({
+                  ...editedActivity,
+                  location: {
+                    ...editedActivity.location,
+                    lat: parseFloat(e.target.value) || 0
+                  }
+                })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="activityLongitude">Longitude</Label>
+              <Input
+                id="activityLongitude"
+                type="number"
+                step="0.000001"
+                value={editedActivity.location?.lng || ''}
+                onChange={(e) => setEditedActivity({
+                  ...editedActivity,
+                  location: {
+                    ...editedActivity.location,
+                    lng: parseFloat(e.target.value) || 0
+                  }
+                })}
+              />
+            </div>
+          </div>
         </div>
         <div className="flex justify-end">
           <Button onClick={() => onSave(editedActivity)}>Save Changes</Button>
@@ -181,6 +215,40 @@ function AccommodationEditDialog({
               value={edited.details}
               onChange={(e) => setEdited({ ...edited, details: e.target.value })}
             />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="latitude">Latitude</Label>
+              <Input
+                id="latitude"
+                type="number"
+                step="0.000001"
+                value={edited.coordinates?.lat || ''}
+                onChange={(e) => setEdited({
+                  ...edited,
+                  coordinates: {
+                    ...edited.coordinates,
+                    lat: parseFloat(e.target.value) || 0
+                  }
+                })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="longitude">Longitude</Label>
+              <Input
+                id="longitude"
+                type="number"
+                step="0.000001"
+                value={edited.coordinates?.lng || ''}
+                onChange={(e) => setEdited({
+                  ...edited,
+                  coordinates: {
+                    ...edited.coordinates,
+                    lng: parseFloat(e.target.value) || 0
+                  }
+                })}
+              />
+            </div>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="checkInTime">Check-in Time</Label>
@@ -340,6 +408,85 @@ function TransportationEditDialog({
               onChange={(e) => setEdited({ ...edited, details: e.target.value })}
             />
           </div>
+          <div className="grid gap-2">
+            <Label>Route Coordinates</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>From</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    type="number"
+                    step="0.000001"
+                    placeholder="Latitude"
+                    value={edited.route?.from.lat || ''}
+                    onChange={(e) => setEdited({
+                      ...edited,
+                      route: {
+                        ...edited.route,
+                        from: {
+                          ...edited.route?.from,
+                          lat: parseFloat(e.target.value) || 0
+                        }
+                      }
+                    })}
+                  />
+                  <Input
+                    type="number"
+                    step="0.000001"
+                    placeholder="Longitude"
+                    value={edited.route?.from.lng || ''}
+                    onChange={(e) => setEdited({
+                      ...edited,
+                      route: {
+                        ...edited.route,
+                        from: {
+                          ...edited.route?.from,
+                          lng: parseFloat(e.target.value) || 0
+                        }
+                      }
+                    })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>To</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    type="number"
+                    step="0.000001"
+                    placeholder="Latitude"
+                    value={edited.route?.to.lat || ''}
+                    onChange={(e) => setEdited({
+                      ...edited,
+                      route: {
+                        ...edited.route,
+                        to: {
+                          ...edited.route?.to,
+                          lat: parseFloat(e.target.value) || 0
+                        }
+                      }
+                    })}
+                  />
+                  <Input
+                    type="number"
+                    step="0.000001"
+                    placeholder="Longitude"
+                    value={edited.route?.to.lng || ''}
+                    onChange={(e) => setEdited({
+                      ...edited,
+                      route: {
+                        ...edited.route,
+                        to: {
+                          ...edited.route?.to,
+                          lng: parseFloat(e.target.value) || 0
+                        }
+                      }
+                    })}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div className="flex justify-end">
           <Button onClick={() => onSave(edited)}>Save Changes</Button>
@@ -417,7 +564,7 @@ export default function TravelDayCard({
           />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/90">
             <div className="absolute bottom-4 left-4">
-              <h3 className="text-xl font-semibold text-white">
+              <h3 className="text-xl font-semibold text-black">
                 {formatDayHeader(startDate, day)}
               </h3>
             </div>
