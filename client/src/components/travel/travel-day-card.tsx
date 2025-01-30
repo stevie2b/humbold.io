@@ -242,10 +242,6 @@ function ActivityEditDialog({
   );
 }
 
-// Updates to ActivityEditDialog and recommendations section
-//function ActivityEditDialog({ ... }) { ... }
-
-
 // Update AccommodationEditDialog to include LocationSearch
 function AccommodationEditDialog({
   accommodation,
@@ -577,7 +573,7 @@ interface TransportationDetails {
 interface TravelDayCardProps {
   day: number;
   accommodation?: AccommodationDetails;
-  transportation?: TransportationDetails;
+  transportation?: TransportationDetails[] | TransportationDetails;
   activities?: ActivityItem[];
   onRemoveActivity?: (index: number) => void;
   onAddActivity?: (activity: ActivityItem) => void;
@@ -613,7 +609,7 @@ function formatDayHeader(startDate: Date, day: number): string {
   return `${format(currentDate, 'EEE')}, ${format(currentDate, 'dd.MM')}. (day ${day})`;
 }
 
-export default function TravelDayCard({
+function TravelDayCard({
   day,
   accommodation,
   transportation,
@@ -645,11 +641,13 @@ export default function TravelDayCard({
     ) : [];
 
   const transHours = transportation ? (
-    transportation.type === 'continuous' ?
-      getHourRange("00:00", "23:59") :
-      transportation.departureTime && transportation.arrivalTime ?
-        getHourRange(transportation.departureTime, transportation.arrivalTime) :
-        []
+    Array.isArray(transportation) ?
+      transportation.flatMap(transport => transport.departureTime && transport.arrivalTime ? getHourRange(transport.departureTime, transport.arrivalTime) : []) :
+      transportation.type === 'continuous' ?
+        getHourRange("00:00", "23:59") :
+        transportation.departureTime && transportation.arrivalTime ?
+          getHourRange(transportation.departureTime, transportation.arrivalTime) :
+          []
   ) : [];
 
   const activityHours = activities ? activities.flatMap(activity =>
@@ -777,54 +775,25 @@ export default function TravelDayCard({
                 )}
               </div>
             </div>
-            {transportation && (
-              <div className="relative bg-amber-50 rounded-lg p-3 border border-amber-200">
-                <div className="relative z-10">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="text-amber-700 font-medium mb-1">
-                        {transportation.title}
-                        {transportation.type === 'scheduled' && transportation.flightNumber && (
-                          <span className="text-sm ml-2">({transportation.flightNumber})</span>
-                        )}
-                      </div>
-                      <div className="text-sm text-amber-600">
-                        {transportation.details}
-                        {transportation.type === 'scheduled' && (
-                          <div className="mt-1">
-                            <span className="font-medium">Departure:</span> {transportation.departureTime} |{" "}
-                            <span className="font-medium">Arrival:</span> {transportation.arrivalTime}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    {onEditTransportation && (
-                      <TransportationEditDialog
-                        transportation={transportation}
-                        onSave={onEditTransportation}
-                        trigger={
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        }
-                      />
-                    )}
-                  </div>
-                </div>
-                <div className="absolute inset-0 flex rounded-lg overflow-hidden">
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <div
-                      key={i}
-                      className={`flex-1 ${transHours.includes(i) ? 'bg-amber-200/50' : ''}`}
+            {Array.isArray(transportation) ? (
+              <div className="space-y-2">
+                {transportation.map((transport, idx) => (
+                  <div key={idx} className="relative bg-amber-50 rounded-lg p-3 border border-amber-200">
+                    <TransportationContent
+                      transportation={transport}
+                      onEdit={onEditTransportation}
                     />
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            )}
+            ) : transportation ? (
+              <div className="relative bg-amber-50 rounded-lg p-3 border border-amber-200">
+                <TransportationContent
+                  transportation={transportation}
+                  onEdit={onEditTransportation}
+                />
+              </div>
+            ) : null}
           </div>
 
           {activities && activities.length > 0 && (
@@ -836,7 +805,7 @@ export default function TravelDayCard({
                   return (
                     <div
                       key={index}
-                      className="relative bg-blue-50 rounded-lg p-3 border border-blue-200 flex items-center justify-between"
+                      className="relative bg-blue-100 rounded-lg p-3 border border-blue-200 flex items-center justify-between"
                     >
                       <div className="relative z-10 flex-1">
                         <div className="flex items-center space-x-2">
@@ -899,13 +868,11 @@ export default function TravelDayCard({
               <h4 className="text-sm font-medium text-gray-700 mb-2">Recommended Activities</h4>
               <div className="space-y-2">
                 {recommendations.map((activity, index) => {
-                  // Check if this activity (except "Own Idea") has already been added
                   const isOwnIdea = activity.category === 'custom';
                   const isAlreadyAdded = !isOwnIdea && activities.some(
                     existingActivity => existingActivity.title === activity.title
                   );
 
-                  // Only show if it's not already added or if it's "Own Idea"
                   if (!isAlreadyAdded || isOwnIdea) {
                     const suggestedTime = "14:00";
                     const suggestedEndTime = "16:00";
@@ -957,3 +924,53 @@ export default function TravelDayCard({
     </motion.div>
   );
 }
+
+// Helper component for transportation card content
+function TransportationContent({
+  transportation,
+  onEdit
+}: {
+  transportation: TransportationDetails;
+  onEdit?: (updatedTransportation: TransportationDetails) => void;
+}) {
+  return (
+    <div className="relative z-10">
+      <div className="flex justify-between items-start">
+        <div>
+          <div className="text-amber-700 font-medium mb-1">
+            {transportation.title}
+            {transportation.type === 'scheduled' && transportation.flightNumber && (
+              <span className="text-sm ml-2">({transportation.flightNumber})</span>
+            )}
+          </div>
+          <div className="text-sm text-amber-600">
+            {transportation.details}
+            {transportation.type === 'scheduled' && (
+              <div className="mt-1">
+                <span className="font-medium">Departure:</span> {transportation.departureTime} |{" "}
+                <span className="font-medium">Arrival:</span> {transportation.arrivalTime}
+              </div>
+            )}
+          </div>
+        </div>
+        {onEdit && (
+          <TransportationEditDialog
+            transportation={transportation}
+            onSave={onEdit}
+            trigger={
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            }
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default TravelDayCard;

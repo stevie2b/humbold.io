@@ -73,53 +73,6 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
   const startDate = new Date();
   const [viewMode, setViewMode] = useState("cards");
 
-  // Generate recommended activities for each day
-  const generateRecommendations = (day: DayPlan): ActivityItem[] => {
-    const lastActivityTime = day.activities.length > 0
-      ? day.activities.reduce((latest, activity) => {
-          const [hours, minutes] = activity.time.split(':').map(Number);
-          const [durationHours = 0, durationMinutes = 0] = (activity.duration || '00:00').split(':').map(Number);
-          const endTime = hours * 60 + minutes + durationHours * 60 + durationMinutes;
-          return Math.max(latest, endTime);
-        }, 0)
-      : 14 * 60;
-
-    const baseHours = Math.floor(lastActivityTime / 60);
-    const baseMinutes = lastActivityTime % 60;
-    const baseTime = `${baseHours.toString().padStart(2, '0')}:${baseMinutes.toString().padStart(2, '0')}`;
-
-    return [
-      {
-        time: baseTime,
-        duration: "02:00",
-        title: `Local Cultural Experience in ${day.accommodation?.title?.split(',')[0] || 'the Area'}`,
-        category: "culture",
-        description: "Immerse yourself in local traditions and customs"
-      },
-      {
-        time: baseTime,
-        duration: "02:00",
-        title: `Hidden Gems Walking Tour`,
-        category: "exploration",
-        description: "Discover lesser-known spots and local favorites"
-      },
-      {
-        time: baseTime,
-        duration: "02:00",
-        title: `Local Food Experience`,
-        category: "culinary",
-        description: "Taste authentic local cuisine and specialties"
-      },
-      {
-        time: baseTime,
-        duration: "02:00",
-        title: "Your Own Idea",
-        category: "custom",
-        description: "Add your personal touch to the itinerary"
-      }
-    ];
-  };
-
   // Edit handlers
   const handleEditAccommodation = (dayIndex: number, updatedAccommodation: AccommodationDetails) => {
     setCurrentItinerary(prev => {
@@ -136,10 +89,16 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
   const handleEditTransportation = (dayIndex: number, updatedTransportation: TransportationDetails) => {
     setCurrentItinerary(prev => {
       const newItinerary = [...prev];
-      newItinerary[dayIndex] = {
-        ...newItinerary[dayIndex],
-        transportation: updatedTransportation
-      };
+      const currentTransport = newItinerary[dayIndex].transportation;
+
+      if (Array.isArray(currentTransport)) {
+        // If it's already an array, update the first transportation entry
+        newItinerary[dayIndex].transportation = [updatedTransportation, ...currentTransport.slice(1)];
+      } else {
+        // If it's a single transportation or undefined, set it directly
+        newItinerary[dayIndex].transportation = updatedTransportation;
+      }
+
       return newItinerary;
     });
     toast({ title: "Success", description: "Transportation updated successfully" });
@@ -205,26 +164,20 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
   const handleAddTransportation = (dayIndex: number) => {
     setCurrentItinerary(prev => {
       const newItinerary = [...prev];
+      const newTransportation = {
+        title: "New Transportation",
+        details: "",
+        type: "continuous" as const
+      };
+
       if (newItinerary[dayIndex].transportation) {
-        if (Array.isArray(newItinerary[dayIndex].transportation)) {
-          newItinerary[dayIndex].transportation.push({
-            title: "New Transportation",
-            details: "",
-            type: "continuous"
-          });
-        } else {
-          newItinerary[dayIndex].transportation = [newItinerary[dayIndex].transportation, {
-            title: "New Transportation",
-            details: "",
-            type: "continuous"
-          }];
-        }
+        // If transportation exists, convert to array if needed
+        newItinerary[dayIndex].transportation = Array.isArray(newItinerary[dayIndex].transportation)
+          ? [...newItinerary[dayIndex].transportation, newTransportation]
+          : [newItinerary[dayIndex].transportation, newTransportation];
       } else {
-        newItinerary[dayIndex].transportation = [{
-          title: "New Transportation",
-          details: "",
-          type: "continuous"
-        }];
+        // If no transportation exists, create new array with single entry
+        newItinerary[dayIndex].transportation = [newTransportation];
       }
       return newItinerary;
     });
@@ -359,3 +312,49 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
     </div>
   );
 }
+
+const generateRecommendations = (day: DayPlan): ActivityItem[] => {
+    const lastActivityTime = day.activities.length > 0
+      ? day.activities.reduce((latest, activity) => {
+          const [hours, minutes] = activity.time.split(':').map(Number);
+          const [durationHours = 0, durationMinutes = 0] = (activity.duration || '00:00').split(':').map(Number);
+          const endTime = hours * 60 + minutes + durationHours * 60 + durationMinutes;
+          return Math.max(latest, endTime);
+        }, 0)
+      : 14 * 60;
+
+    const baseHours = Math.floor(lastActivityTime / 60);
+    const baseMinutes = lastActivityTime % 60;
+    const baseTime = `${baseHours.toString().padStart(2, '0')}:${baseMinutes.toString().padStart(2, '0')}`;
+
+    return [
+      {
+        time: baseTime,
+        duration: "02:00",
+        title: `Local Cultural Experience in ${day.accommodation?.title?.split(',')[0] || 'the Area'}`,
+        category: "culture",
+        description: "Immerse yourself in local traditions and customs"
+      },
+      {
+        time: baseTime,
+        duration: "02:00",
+        title: `Hidden Gems Walking Tour`,
+        category: "exploration",
+        description: "Discover lesser-known spots and local favorites"
+      },
+      {
+        time: baseTime,
+        duration: "02:00",
+        title: `Local Food Experience`,
+        category: "culinary",
+        description: "Taste authentic local cuisine and specialties"
+      },
+      {
+        time: baseTime,
+        duration: "02:00",
+        title: "Your Own Idea",
+        category: "custom",
+        description: "Add your personal touch to the itinerary"
+      }
+    ];
+  };
