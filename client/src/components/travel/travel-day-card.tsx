@@ -103,10 +103,10 @@ interface TravelDayCardProps {
   onAddActivity?: (activity: ActivityItem) => void;
   onEditActivity?: (index: number, updatedActivity: ActivityItem) => void;
   onEditAccommodation?: (updatedAccommodation: AccommodationDetails) => void;
-  onRemoveAccommodation?: (accommodation: AccommodationDetails) => void;
+  onRemoveAccommodation?: () => void;
   onEditTransportation?: (updatedTransportation: TransportationDetails) => void;
   onAddTransportation?: (transportation: TransportationDetails) => void;
-  onAddAccommodation?: (accommodation: AccommodationDetails) => void;
+  onAddAccommodation?: () => void;
   recommendations?: ActivityItem[];
   isFirstCard?: boolean;
   isLastCard?: boolean;
@@ -240,34 +240,26 @@ function AccommodationEditDialog({
 }) {
   const [edited, setEdited] = useState(accommodation);
   const [stayStartDate, setStayStartDate] = useState<Date | undefined>(
-    accommodation.startDay ? addDays(startDate, accommodation.startDay - 1) : undefined
+    accommodation.startDay ? addDays(startDate, accommodation.startDay - 1) : addDays(startDate, currentDay - 1)
   );
   const [stayEndDate, setStayEndDate] = useState<Date | undefined>(
-    accommodation.endDay ? addDays(startDate, accommodation.endDay - 1) : undefined
+    accommodation.endDay ? addDays(startDate, accommodation.endDay - 1) : addDays(startDate, currentDay - 1)
   );
-
-  useEffect(() => {
-    if (!stayStartDate) {
-      setStayStartDate(addDays(startDate, currentDay - 1));
-    }
-    if (!stayEndDate) {
-      setStayEndDate(addDays(startDate, currentDay - 1));
-    }
-  }, [currentDay, startDate]);
 
   const handleSave = () => {
     if (!stayStartDate || !stayEndDate) {
       return;
     }
 
-    // Convert dates back to day numbers
     const startDay = differenceInDays(stayStartDate, startDate) + 1;
     const endDay = differenceInDays(stayEndDate, startDate) + 1;
 
     onSave({
       ...edited,
       startDay,
-      endDay
+      endDay,
+      checkInTime: edited.checkInTime || "14:00",
+      checkOutTime: edited.checkOutTime || "11:00"
     });
   };
 
@@ -301,15 +293,6 @@ function AccommodationEditDialog({
             searchType="accommodation"
             initialAddress={accommodation.title}
           />
-
-          <div className="grid gap-2">
-            <Label htmlFor="details">Details</Label>
-            <Input
-              id="details"
-              value={edited.details}
-              onChange={(e) => setEdited({ ...edited, details: e.target.value })}
-            />
-          </div>
 
           <div className="grid gap-2">
             <Label>Stay Duration</Label>
@@ -385,6 +368,15 @@ function AccommodationEditDialog({
               type="time"
               value={edited.checkOutTime || "11:00"}
               onChange={(e) => setEdited({ ...edited, checkOutTime: e.target.value })}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="details">Details</Label>
+            <Input
+              id="details"
+              value={edited.details}
+              onChange={(e) => setEdited({ ...edited, details: e.target.value })}
             />
           </div>
         </div>
@@ -775,7 +767,6 @@ export default function TravelDayCard({
     return `${format(currentDate, 'EEE')}, ${format(currentDate, 'dd.MM')}. (day ${dayNum})`;
   };
 
-  // Extract city information from accommodation
   const getCurrentLocation = () => {
     if (!accommodation) return "";
     const city = accommodation.title.split(',')[0];

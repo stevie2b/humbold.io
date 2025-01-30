@@ -124,11 +124,15 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
     try {
       setCurrentItinerary(prev => {
         const newItinerary = [...prev];
+        const oldAccommodation = newItinerary[dayIndex].accommodation;
 
-        // Remove old accommodation entries
-        for (let i = 0; i < newItinerary.length; i++) {
-          if (newItinerary[i].accommodation?.title === updatedAccommodation.title) {
-            delete newItinerary[i].accommodation;
+        // Remove old accommodation entries if they exist
+        if (oldAccommodation?.startDay && oldAccommodation?.endDay) {
+          for (let i = oldAccommodation.startDay; i <= oldAccommodation.endDay; i++) {
+            const idx = i - 1;
+            if (idx >= 0 && idx < newItinerary.length) {
+              delete newItinerary[idx].accommodation;
+            }
           }
         }
 
@@ -136,13 +140,20 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
         for (let i = updatedAccommodation.startDay; i <= updatedAccommodation.endDay; i++) {
           const idx = i - 1;
           if (idx >= 0 && idx < newItinerary.length) {
+            // Check for overlapping accommodation
+            if (newItinerary[idx].accommodation && 
+                newItinerary[idx].accommodation.title !== oldAccommodation?.title) {
+              toast({
+                title: "Warning",
+                description: `Day ${i} already has a different accommodation. Please adjust dates to avoid overlap.`,
+                variant: "destructive"
+              });
+              return prev;
+            }
+
             newItinerary[idx] = {
               ...newItinerary[idx],
-              accommodation: {
-                ...updatedAccommodation,
-                startDay: updatedAccommodation.startDay,
-                endDay: updatedAccommodation.endDay
-              }
+              accommodation: updatedAccommodation
             };
           }
         }
@@ -162,6 +173,51 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
         variant: "destructive" 
       });
     }
+  };
+
+  const handleRemoveAccommodation = (dayIndex: number) => {
+    setCurrentItinerary(prev => {
+      const newItinerary = [...prev];
+      const currentAccommodation = newItinerary[dayIndex].accommodation;
+
+      if (currentAccommodation?.startDay && currentAccommodation?.endDay) {
+        // Remove accommodation from all days it spans
+        for (let i = currentAccommodation.startDay; i <= currentAccommodation.endDay; i++) {
+          const idx = i - 1;
+          if (idx >= 0 && idx < newItinerary.length) {
+            delete newItinerary[idx].accommodation;
+          }
+        }
+      } else {
+        // If no start/end day, just remove from current day
+        delete newItinerary[dayIndex].accommodation;
+      }
+
+      return newItinerary;
+    });
+    toast({ title: "Success", description: "Accommodation removed successfully" });
+  };
+
+  const handleAddAccommodation = (dayIndex: number) => {
+    const timestamp = Date.now();
+    const newAccommodation: AccommodationDetails = {
+      title: `New Accommodation ${timestamp}`,
+      details: "Enter accommodation details",
+      startDay: dayIndex + 1,
+      endDay: dayIndex + 1,
+      checkInTime: "14:00",
+      checkOutTime: "11:00"
+    };
+
+    setCurrentItinerary(prev => {
+      const newItinerary = [...prev];
+      newItinerary[dayIndex] = {
+        ...newItinerary[dayIndex],
+        accommodation: newAccommodation
+      };
+      return newItinerary;
+    });
+    toast({ title: "Success", description: "New accommodation added" });
   };
 
   const handleEditTransportation = (dayIndex: number, updatedTransportation: TransportationDetails) => {
@@ -246,47 +302,6 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
     toast({ title: "Success", description: "New transportation added" });
   };
 
-  const handleRemoveAccommodation = (dayIndex: number) => {
-    setCurrentItinerary(prev => {
-      const newItinerary = [...prev];
-      const currentAccommodation = newItinerary[dayIndex].accommodation;
-
-      if (currentAccommodation?.startDay && currentAccommodation?.endDay) {
-        // Remove accommodation from all days it spans
-        for (let i = currentAccommodation.startDay; i <= currentAccommodation.endDay; i++) {
-          const idx = i - 1;
-          if (idx >= 0 && idx < newItinerary.length) {
-            delete newItinerary[idx].accommodation;
-          }
-        }
-      } else {
-        // If no start/end day, just remove from current day
-        delete newItinerary[dayIndex].accommodation;
-      }
-
-      return newItinerary;
-    });
-    toast({ title: "Success", description: "Accommodation removed successfully" });
-  };
-
-  const handleAddAccommodation = (dayIndex: number) => {
-    const timestamp = Date.now();
-    const newAccommodation: AccommodationDetails = {
-      title: `New Accommodation ${timestamp}`,
-      details: "Enter accommodation details",
-      startDay: dayIndex + 1,
-      endDay: dayIndex + 1,
-      checkInTime: "14:00",
-      checkOutTime: "11:00"
-    };
-
-    setCurrentItinerary(prev => {
-      const newItinerary = [...prev];
-      newItinerary[dayIndex].accommodation = newAccommodation;
-      return newItinerary;
-    });
-    toast({ title: "Success", description: "New accommodation added" });
-  };
 
   const mapLocations = currentItinerary.flatMap(day => {
     const locations = [];
