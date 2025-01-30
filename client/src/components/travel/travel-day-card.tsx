@@ -705,6 +705,7 @@ function AccommodationBox({
 }
 
 
+
 // Main component
 export default function TravelDayCard({
   day,
@@ -783,46 +784,21 @@ export default function TravelDayCard({
                 )}
               </div>
 
-              {/* Display accommodation based on simple conditions */}
-              {(!accommodation.startDay || accommodation.startDay === day) && (
-                <AccommodationBox
-                  title={accommodation.title}
-                  details={accommodation.details}
-                  checkInTime={accommodation.checkInTime}
-                  type="checkin"
-                  onEdit={onEditAccommodation ? () => onEditAccommodation(accommodation) : undefined}
-                />
-              )}
-
-              {accommodation.endDay === day && (
-                <AccommodationBox
-                  title={accommodation.title}
-                  details={accommodation.details}
-                  checkOutTime={accommodation.checkOutTime}
-                  type="checkout"
-                  onEdit={onEditAccommodation ? () => onEditAccommodation(accommodation) : undefined}
-                />
-              )}
-
-              {accommodation.startDay && accommodation.endDay && 
-               day > accommodation.startDay && day < accommodation.endDay && (
-                <AccommodationBox
-                  title={accommodation.title}
-                  details={accommodation.details}
-                  type="full"
-                  onEdit={onEditAccommodation ? () => onEditAccommodation(accommodation) : undefined}
-                />
-              )}
-
-              {/* Fallback case: if no start/end day is set, show as full stay */}
-              {!accommodation.startDay && !accommodation.endDay && (
-                <AccommodationBox
-                  title={accommodation.title}
-                  details={accommodation.details}
-                  type="full"
-                  onEdit={onEditAccommodation ? () => onEditAccommodation(accommodation) : undefined}
-                />
-              )}
+              {/* Single accommodation display logic */}
+              <AccommodationBox
+                title={accommodation.title}
+                details={accommodation.details}
+                checkInTime={accommodation.checkInTime}
+                checkOutTime={accommodation.checkOutTime}
+                type={
+                  accommodation.startDay === day
+                    ? "checkin"
+                    : accommodation.endDay === day
+                    ? "checkout"
+                    : "full"
+                }
+                onEdit={onEditAccommodation ? () => onEditAccommodation(accommodation) : undefined}
+              />
             </div>
           )}
 

@@ -89,7 +89,7 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
 
   const { toast } = useToast();
   const [currentItinerary, setCurrentItinerary] = useState<DayPlan[]>(itinerary ?? []);
-  const startDate = new Date(); 
+  const startDate = new Date();
   const [viewMode, setViewMode] = useState("cards");
 
   const handleEditAccommodation = (dayIndex: number, updatedAccommodation: AccommodationDetails) => {
@@ -102,41 +102,47 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
       return;
     }
 
-    setCurrentItinerary(prev => {
-      const newItinerary = [...prev];
+    try {
+      setCurrentItinerary(prev => {
+        const newItinerary = [...prev];
 
-      const currentAccommodation = newItinerary[dayIndex].accommodation;
-      if (currentAccommodation?.startDay && currentAccommodation?.endDay) {
-        for (let i = currentAccommodation.startDay; i <= currentAccommodation.endDay; i++) {
+        // Remove old accommodation entries
+        for (let i = 0; i < newItinerary.length; i++) {
+          if (newItinerary[i].accommodation?.title === updatedAccommodation.title) {
+            delete newItinerary[i].accommodation;
+          }
+        }
+
+        // Add new accommodation entries
+        for (let i = updatedAccommodation.startDay; i <= updatedAccommodation.endDay; i++) {
           const idx = i - 1;
-          if (idx < newItinerary.length && newItinerary[idx].accommodation?.title === currentAccommodation.title) {
-            delete newItinerary[idx].accommodation;
+          if (idx >= 0 && idx < newItinerary.length) {
+            newItinerary[idx] = {
+              ...newItinerary[idx],
+              accommodation: {
+                ...updatedAccommodation,
+                startDay: updatedAccommodation.startDay,
+                endDay: updatedAccommodation.endDay
+              }
+            };
           }
         }
-      }
 
-      for (let i = updatedAccommodation.startDay; i <= updatedAccommodation.endDay; i++) {
-        const idx = i - 1;
-        if (idx < newItinerary.length) {
-          const existingAccommodation = newItinerary[idx].accommodation;
-          if (existingAccommodation && existingAccommodation.title !== updatedAccommodation.title) {
-            toast({
-              title: "Warning",
-              description: `Day ${i} already has a different accommodation. Please adjust the dates to avoid overlap.`,
-              variant: "destructive"
-            });
-            return prev;
-          }
-          newItinerary[idx] = {
-            ...newItinerary[idx],
-            accommodation: updatedAccommodation
-          };
-        }
-      }
+        return newItinerary;
+      });
 
-      return newItinerary;
-    });
-    toast({ title: "Success", description: "Accommodation updated successfully" });
+      toast({ 
+        title: "Success", 
+        description: "Accommodation updated successfully" 
+      });
+    } catch (error) {
+      console.error("Error updating accommodation:", error);
+      toast({ 
+        title: "Error", 
+        description: "Failed to update accommodation. Please try again.", 
+        variant: "destructive" 
+      });
+    }
   };
 
   const handleEditTransportation = (dayIndex: number, updatedTransportation: TransportationDetails) => {
