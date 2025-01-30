@@ -348,11 +348,13 @@ function AccommodationEditDialog({
 function TransportationEditDialog({
   transportation,
   onSave,
-  trigger
+  trigger,
+  onAddTransportation
 }: {
   transportation: TransportationDetails;
   onSave: (updatedTransportation: TransportationDetails) => void;
   trigger: React.ReactNode;
+  onAddTransportation?: (transportation: TransportationDetails) => void;
 }) {
   const [edited, setEdited] = useState(transportation);
   const [timeError, setTimeError] = useState('');
@@ -582,6 +584,7 @@ interface TravelDayCardProps {
   onEditActivity?: (index: number, updatedActivity: ActivityItem) => void;
   onEditAccommodation?: (updatedAccommodation: AccommodationDetails) => void;
   onEditTransportation?: (updatedTransportation: TransportationDetails) => void;
+  onAddTransportation?: (transportation: TransportationDetails) => void;
   recommendations?: ActivityItem[];
   isFirstCard?: boolean;
   isLastCard?: boolean;
@@ -623,7 +626,8 @@ export default function TravelDayCard({
   recommendations = [],
   isFirstCard = false,
   isLastCard = false,
-  startDate = new Date()
+  startDate = new Date(),
+  onAddTransportation
 }: TravelDayCardProps) {
 
   const isWithinStay = accommodation
@@ -694,45 +698,47 @@ export default function TravelDayCard({
                     Accommodation
                   </h4>
                 </div>
-                {onEditAccommodation && (
-                  <AccommodationEditDialog
-                    accommodation={accommodation}
-                    onSave={onEditAccommodation}
-                    trigger={
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    }
-                  />
-                )}
               </div>
               <div className="relative bg-emerald-50 rounded-lg p-3 border border-emerald-200">
                 <div className="relative z-10">
                   {isWithinStay ? (
-                    <>
-                      <div className="text-emerald-700 font-medium mb-1">
-                        {accommodation.title}
-                      </div>
-                      <div className="text-sm text-emerald-600">
-                        {accommodation.details}
-                        <div className="mt-1">
-                          {isCheckInDay && (
-                            <div>
-                              <span className="font-medium">Check-in:</span> {accommodation.checkInTime}
-                            </div>
-                          )}
-                          {isCheckOutDay && (
-                            <div>
-                              <span className="font-medium">Check-out:</span> {accommodation.checkOutTime}
-                            </div>
-                          )}
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="text-emerald-700 font-medium mb-1">
+                          {accommodation.title}
+                        </div>
+                        <div className="text-sm text-emerald-600">
+                          {accommodation.details}
+                          <div className="mt-1">
+                            {isCheckInDay && (
+                              <div>
+                                <span className="font-medium">Check-in:</span> {accommodation.checkInTime}
+                              </div>
+                            )}
+                            {isCheckOutDay && (
+                              <div>
+                                <span className="font-medium">Check-out:</span> {accommodation.checkOutTime}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </>
+                      {onEditAccommodation && (
+                        <AccommodationEditDialog
+                          accommodation={accommodation}
+                          onSave={onEditAccommodation}
+                          trigger={
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          }
+                        />
+                      )}
+                    </div>
                   ) : (
                     <div className="text-emerald-600 text-sm italic">
                       No accommodation scheduled for this day
@@ -751,41 +757,61 @@ export default function TravelDayCard({
             </div>
           )}
 
-          {transportation && (
-            <div>
-              <div className="flex justify-between items-center mb-2">
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <div className="flex items-center gap-2">
                 <h4 className="text-sm font-medium text-amber-700">Transportation</h4>
-                {onEditTransportation && (
-                  <TransportationEditDialog
-                    transportation={transportation}
-                    onSave={onEditTransportation}
-                    trigger={
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    }
-                  />
+                {onAddTransportation && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => onAddTransportation({
+                      title: "New Transportation",
+                      details: "",
+                      type: "continuous"
+                    })}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 )}
               </div>
+            </div>
+            {transportation && (
               <div className="relative bg-amber-50 rounded-lg p-3 border border-amber-200">
                 <div className="relative z-10">
-                  <div className="text-amber-700 font-medium mb-1">
-                    {transportation.title}
-                    {transportation.type === 'scheduled' && transportation.flightNumber && (
-                      <span className="text-sm ml-2">({transportation.flightNumber})</span>
-                    )}
-                  </div>
-                  <div className="text-sm text-amber-600">
-                    {transportation.details}
-                    {transportation.type === 'scheduled' && (
-                      <div className="mt-1">
-                        <span className="font-medium">Departure:</span> {transportation.departureTime} |{" "}
-                        <span className="font-medium">Arrival:</span> {transportation.arrivalTime}
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="text-amber-700 font-medium mb-1">
+                        {transportation.title}
+                        {transportation.type === 'scheduled' && transportation.flightNumber && (
+                          <span className="text-sm ml-2">({transportation.flightNumber})</span>
+                        )}
                       </div>
+                      <div className="text-sm text-amber-600">
+                        {transportation.details}
+                        {transportation.type === 'scheduled' && (
+                          <div className="mt-1">
+                            <span className="font-medium">Departure:</span> {transportation.departureTime} |{" "}
+                            <span className="font-medium">Arrival:</span> {transportation.arrivalTime}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {onEditTransportation && (
+                      <TransportationEditDialog
+                        transportation={transportation}
+                        onSave={onEditTransportation}
+                        trigger={
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        }
+                      />
                     )}
                   </div>
                 </div>
@@ -798,69 +824,72 @@ export default function TravelDayCard({
                   ))}
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {activities && activities.length > 0 && (
             <div>
               <h4 className="text-sm font-medium text-blue-700 mb-2">Activities</h4>
               <div className="space-y-2">
-                {activities.map((activity, index) => (
-                  <div
-                    key={index}
-                    className="relative bg-blue-50 rounded-lg p-3 border border-blue-200 flex items-center justify-between"
-                  >
-                    <div className="relative z-10 flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-blue-600 font-medium">
-                          {activity.time}
-                          {activity.duration && ` - ${activity.duration}`}
-                        </span>
-                        <span className="text-blue-700">
-                          {activity.title}
-                        </span>
+                {activities.map((activity, index) => {
+                  const endTimeStr = activity.duration ? calculateEndTime(activity.time, activity.duration) : '';
+                  return (
+                    <div
+                      key={index}
+                      className="relative bg-blue-50 rounded-lg p-3 border border-blue-200 flex items-center justify-between"
+                    >
+                      <div className="relative z-10 flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-blue-600 font-medium">
+                            {activity.time}
+                            {endTimeStr && ` - ${endTimeStr}`}
+                          </span>
+                          <span className="text-blue-700">
+                            {activity.title}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="relative z-10 flex items-center space-x-1">
+                        {onEditActivity && (
+                          <ActivityEditDialog
+                            activity={activity}
+                            onSave={(updatedActivity) => onEditActivity(index, updatedActivity)}
+                            trigger={
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            }
+                          />
+                        )}
+                        {onRemoveActivity && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => onRemoveActivity(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                      <div className="absolute inset-0 flex rounded-lg overflow-hidden">
+                        {Array.from({ length: 24 }, (_, i) => {
+                          const hours = getHourRange(activity.time, activity.duration);
+                          return (
+                            <div
+                              key={i}
+                              className={`flex-1 ${hours.includes(i) ? 'bg-blue-200/50' : ''}`}
+                            />
+                          );
+                        })}
                       </div>
                     </div>
-                    <div className="relative z-10 flex items-center space-x-1">
-                      {onEditActivity && (
-                        <ActivityEditDialog
-                          activity={activity}
-                          onSave={(updatedActivity) => onEditActivity(index, updatedActivity)}
-                          trigger={
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          }
-                        />
-                      )}
-                      {onRemoveActivity && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          onClick={() => onRemoveActivity(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                    <div className="absolute inset-0 flex rounded-lg overflow-hidden">
-                      {Array.from({ length: 24 }, (_, i) => {
-                        const hours = getHourRange(activity.time, activity.duration);
-                        return (
-                          <div
-                            key={i}
-                            className={`flex-1 ${hours.includes(i) ? 'bg-blue-200/50' : ''}`}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -878,6 +907,9 @@ export default function TravelDayCard({
 
                   // Only show if it's not already added or if it's "Own Idea"
                   if (!isAlreadyAdded || isOwnIdea) {
+                    const suggestedTime = "14:00";
+                    const suggestedEndTime = "16:00";
+
                     return (
                       <div
                         key={index}
@@ -885,10 +917,18 @@ export default function TravelDayCard({
                       >
                         <div className="relative z-10 flex-1">
                           <div className="flex items-center space-x-2">
+                            <span className="text-gray-500 text-sm">
+                              {suggestedTime} - {suggestedEndTime}
+                            </span>
                             <span className="text-gray-700">
                               {activity.title}
                             </span>
                           </div>
+                          {activity.description && (
+                            <p className="text-sm text-gray-500 mt-1">
+                              {activity.description}
+                            </p>
+                          )}
                         </div>
                         {onAddActivity && (
                           <Button
@@ -897,7 +937,7 @@ export default function TravelDayCard({
                             className="relative z-10 h-8 w-8 p-0"
                             onClick={() => onAddActivity({
                               ...activity,
-                              time: "14:00",
+                              time: suggestedTime,
                               duration: "02:00"
                             })}
                           >

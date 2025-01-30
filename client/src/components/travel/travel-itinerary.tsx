@@ -57,7 +57,7 @@ interface TransportationDetails {
 interface DayPlan {
   day: number;
   accommodation?: AccommodationDetails;
-  transportation?: TransportationDetails;
+  transportation?: TransportationDetails | TransportationDetails[];
   activities: ActivityItem[];
 }
 
@@ -75,17 +75,15 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
 
   // Generate recommended activities for each day
   const generateRecommendations = (day: DayPlan): ActivityItem[] => {
-    // Find the last scheduled activity time
-    const lastActivityTime = day.activities.length > 0 
+    const lastActivityTime = day.activities.length > 0
       ? day.activities.reduce((latest, activity) => {
           const [hours, minutes] = activity.time.split(':').map(Number);
           const [durationHours = 0, durationMinutes = 0] = (activity.duration || '00:00').split(':').map(Number);
           const endTime = hours * 60 + minutes + durationHours * 60 + durationMinutes;
           return Math.max(latest, endTime);
         }, 0)
-      : 14 * 60; // Default to 2 PM if no activities
+      : 14 * 60;
 
-    // Convert minutes back to HH:mm format
     const baseHours = Math.floor(lastActivityTime / 60);
     const baseMinutes = lastActivityTime % 60;
     const baseTime = `${baseHours.toString().padStart(2, '0')}:${baseMinutes.toString().padStart(2, '0')}`;
@@ -168,24 +166,21 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
   const handleAddActivity = (dayIndex: number, newActivity: ActivityItem) => {
     setCurrentItinerary(prev => {
       const newItinerary = [...prev];
-      // Check if activity already exists to prevent duplicates
-      const exists = newActivity.category !== 'custom' && // Skip duplicate check for custom activities
+      const exists = newActivity.category !== 'custom' &&
         newItinerary[dayIndex].activities.some(
           activity => activity.title === newActivity.title
         );
 
       if (!exists) {
-        // Calculate a suitable time slot
-        const lastActivityTime = newItinerary[dayIndex].activities.length > 0 
+        const lastActivityTime = newItinerary[dayIndex].activities.length > 0
           ? newItinerary[dayIndex].activities.reduce((latest, activity) => {
               const [hours, minutes] = activity.time.split(':').map(Number);
               const [durationHours = 0, durationMinutes = 0] = (activity.duration || '00:00').split(':').map(Number);
               const endTime = hours * 60 + minutes + durationHours * 60 + durationMinutes;
               return Math.max(latest, endTime);
             }, 0)
-          : 14 * 60; // Default to 2 PM if no activities
+          : 14 * 60;
 
-        // Add 30 minutes buffer between activities
         const suggestedStartTime = lastActivityTime + 30;
         const suggestedHours = Math.floor(suggestedStartTime / 60);
         const suggestedMinutes = suggestedStartTime % 60;
@@ -193,12 +188,12 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
         newItinerary[dayIndex].activities.push({
           ...newActivity,
           time: `${suggestedHours.toString().padStart(2, '0')}:${suggestedMinutes.toString().padStart(2, '0')}`,
-          duration: "02:00" // Default 2-hour duration
+          duration: "02:00"
         });
         toast({ title: "Success", description: "Activity added successfully" });
       } else {
-        toast({ 
-          title: "Info", 
+        toast({
+          title: "Info",
           description: "This activity is already in your itinerary",
           variant: "default"
         });
@@ -207,7 +202,35 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
     });
   };
 
-  // Extract all locations for the map
+  const handleAddTransportation = (dayIndex: number) => {
+    setCurrentItinerary(prev => {
+      const newItinerary = [...prev];
+      if (newItinerary[dayIndex].transportation) {
+        if (Array.isArray(newItinerary[dayIndex].transportation)) {
+          newItinerary[dayIndex].transportation.push({
+            title: "New Transportation",
+            details: "",
+            type: "continuous"
+          });
+        } else {
+          newItinerary[dayIndex].transportation = [newItinerary[dayIndex].transportation, {
+            title: "New Transportation",
+            details: "",
+            type: "continuous"
+          }];
+        }
+      } else {
+        newItinerary[dayIndex].transportation = [{
+          title: "New Transportation",
+          details: "",
+          type: "continuous"
+        }];
+      }
+      return newItinerary;
+    });
+    toast({ title: "Success", description: "New transportation added" });
+  };
+
   const mapLocations = currentItinerary.flatMap(day => {
     const locations = [];
 
@@ -220,20 +243,40 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
       });
     }
 
-    if (day.transportation?.route) {
-      locations.push({
-        title: `${day.transportation.title} (Departure)`,
-        coordinates: day.transportation.route.from,
-        type: 'transportation' as const,
-        day: day.day
-      });
-      locations.push({
-        title: `${day.transportation.title} (Arrival)`,
-        coordinates: day.transportation.route.to,
-        type: 'transportation' as const,
-        day: day.day
-      });
+    if (day.transportation) {
+      if (Array.isArray(day.transportation)) {
+        day.transportation.forEach(transport => {
+          if (transport.route) {
+            locations.push({
+              title: `${transport.title} (Departure)`,
+              coordinates: transport.route.from,
+              type: 'transportation' as const,
+              day: day.day
+            });
+            locations.push({
+              title: `${transport.title} (Arrival)`,
+              coordinates: transport.route.to,
+              type: 'transportation' as const,
+              day: day.day
+            });
+          }
+        });
+      } else if (day.transportation.route) {
+          locations.push({
+            title: `${day.transportation.title} (Departure)`,
+            coordinates: day.transportation.route.from,
+            type: 'transportation' as const,
+            day: day.day
+          });
+          locations.push({
+            title: `${day.transportation.title} (Arrival)`,
+            coordinates: day.transportation.route.to,
+            type: 'transportation' as const,
+            day: day.day
+          });
+        }
     }
+
 
     day.activities.forEach(activity => {
       if (activity.location) {
@@ -278,6 +321,7 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
                     recommendations={generateRecommendations(day)}
                     onEditAccommodation={(updatedAccommodation) => handleEditAccommodation(index, updatedAccommodation)}
                     onEditTransportation={(updatedTransportation) => handleEditTransportation(index, updatedTransportation)}
+                    onAddTransportation={() => handleAddTransportation(index)}
                     onEditActivity={(activityIndex, updatedActivity) => handleEditActivity(index, activityIndex, updatedActivity)}
                     onRemoveActivity={(activityIndex) => handleRemoveActivity(index, activityIndex)}
                     onAddActivity={(newActivity) => handleAddActivity(index, newActivity)}
