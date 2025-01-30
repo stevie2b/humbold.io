@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { X, Plus, Pencil, MapPin } from "lucide-react";
@@ -20,7 +21,6 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-
 
 // Utility functions
 const calculateEndTime = (startTime: string, duration: string): string => {
@@ -628,6 +628,83 @@ function TransportationContent({
   );
 }
 
+function AccommodationBox({
+  title,
+  details,
+  checkInTime,
+  checkOutTime,
+  type,
+  onEdit
+}: {
+  title: string;
+  details: string;
+  checkInTime?: string;
+  checkOutTime?: string;
+  type: 'checkin' | 'checkout' | 'full';
+  onEdit?: () => void;
+}) {
+  return (
+    <div className="relative bg-emerald-100 rounded-lg p-3 border border-emerald-200 mb-2">
+      <div className="relative z-10">
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="text-emerald-700 font-medium mb-1">{title}</div>
+            <div className="text-sm text-emerald-600">
+              {details}
+              {type === 'checkin' && checkInTime && (
+                <div className="mt-1">
+                  <span className="font-medium">Check-in:</span> {checkInTime}
+                </div>
+              )}
+              {type === 'checkout' && checkOutTime && (
+                <div className="mt-1">
+                  <span className="font-medium">Check-out:</span> {checkOutTime}
+                </div>
+              )}
+              {type === 'full' && (
+                <div className="mt-1">
+                  <span className="italic">Continued stay</span>
+                </div>
+              )}
+            </div>
+          </div>
+          {onEdit && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={onEdit}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+      <div className="absolute inset-0 flex rounded-lg overflow-hidden">
+        {Array.from({ length: 24 }, (_, i) => {
+          let isColored = false;
+          if (type === 'checkin') {
+            const checkInHour = checkInTime ? parseInt(checkInTime.split(':')[0]) : 14;
+            isColored = i >= checkInHour;
+          } else if (type === 'checkout') {
+            const checkOutHour = checkOutTime ? parseInt(checkOutTime.split(':')[0]) : 11;
+            isColored = i < checkOutHour;
+          } else {
+            isColored = true;
+          }
+          return (
+            <div
+              key={i}
+              className={`flex-1 ${isColored ? 'bg-emerald-200/50' : ''}`}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
 // Main component
 export default function TravelDayCard({
   day,
@@ -770,59 +847,43 @@ export default function TravelDayCard({
         <CardContent className="p-4 space-y-4">
           {accommodation && (
             <div>
-              <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-emerald-600" />
-                  <h4 className="text-sm font-medium text-emerald-700">Accommodation</h4>
-                </div>
-                {onEditAccommodation && (
-                  <AccommodationEditDialog
-                    accommodation={accommodation}
-                    onSave={onEditAccommodation}
-                    trigger={
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    }
-                    startDate={startDate}
-                  />
-                )}
+              <div className="flex items-center gap-2 mb-2">
+                <MapPin className="h-4 w-4 text-emerald-600" />
+                <h4 className="text-sm font-medium text-emerald-700">Accommodation</h4>
               </div>
-              <div className="relative bg-emerald-100 rounded-lg p-3 border border-emerald-200">
-                <div className="relative z-10">
-                  <div className="text-emerald-700 font-medium mb-1">{accommodation.title}</div>
-                  <div className="text-sm text-emerald-600">
-                    {accommodation.details}
-                    {day === accommodation.startDay && accommodation.checkInTime && (
-                      <div className="mt-1">
-                        <span className="font-medium">Check-in:</span> {accommodation.checkInTime}
-                      </div>
-                    )}
-                    {day === accommodation.endDay && accommodation.checkOutTime && (
-                      <div className="mt-1">
-                        <span className="font-medium">Check-out:</span> {accommodation.checkOutTime}
-                      </div>
-                    )}
-                    {day > accommodation.startDay && day < accommodation.endDay && (
-                      <div className="mt-1">
-                        <span className="italic">Continued stay</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="absolute inset-0 flex rounded-lg overflow-hidden">
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <div
-                      key={i}
-                      className={`flex-1 ${getAccommodationColorClass(i)}`}
-                    />
-                  ))}
-                </div>
-              </div>
+
+              {/* Handle checkout display */}
+              {accommodation.endDay === day && (
+                <AccommodationBox
+                  title={accommodation.title}
+                  details={accommodation.details}
+                  checkOutTime={accommodation.checkOutTime}
+                  type="checkout"
+                  onEdit={onEditAccommodation ? () => onEditAccommodation(accommodation) : undefined}
+                />
+              )}
+
+              {/* Handle checkin display */}
+              {accommodation.startDay === day && (
+                <AccommodationBox
+                  title={accommodation.title}
+                  details={accommodation.details}
+                  checkInTime={accommodation.checkInTime}
+                  type="checkin"
+                  onEdit={onEditAccommodation ? () => onEditAccommodation(accommodation) : undefined}
+                />
+              )}
+
+              {/* Handle middle days */}
+              {accommodation.startDay && accommodation.endDay && 
+               day > accommodation.startDay && day < accommodation.endDay && (
+                <AccommodationBox
+                  title={accommodation.title}
+                  details={accommodation.details}
+                  type="full"
+                  onEdit={onEditAccommodation ? () => onEditAccommodation(accommodation) : undefined}
+                />
+              )}
             </div>
           )}
 

@@ -70,7 +70,7 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
 
   const { toast } = useToast();
   const [currentItinerary, setCurrentItinerary] = useState<DayPlan[]>(itinerary ?? []);
-  const startDate = new Date();
+  const startDate = new Date(); // This should be passed as a prop from the parent
   const [viewMode, setViewMode] = useState("cards");
 
   // Edit handlers
