@@ -783,19 +783,8 @@ export default function TravelDayCard({
                 )}
               </div>
 
-              {/* Handle checkout display */}
-              {accommodation.endDay === day && (
-                <AccommodationBox
-                  title={accommodation.title}
-                  details={accommodation.details}
-                  checkOutTime={accommodation.checkOutTime}
-                  type="checkout"
-                  onEdit={onEditAccommodation ? () => onEditAccommodation(accommodation) : undefined}
-                />
-              )}
-
-              {/* Handle checkin display */}
-              {accommodation.startDay === day && (
+              {/* Handle accommodation display based on stay duration */}
+              {accommodation?.startDay === day && (
                 <AccommodationBox
                   title={accommodation.title}
                   details={accommodation.details}
@@ -805,8 +794,17 @@ export default function TravelDayCard({
                 />
               )}
 
-              {/* Handle middle days */}
-              {accommodation.startDay && accommodation.endDay && 
+              {accommodation?.endDay === day && (
+                <AccommodationBox
+                  title={accommodation.title}
+                  details={accommodation.details}
+                  checkOutTime={accommodation.checkOutTime}
+                  type="checkout"
+                  onEdit={onEditAccommodation ? () => onEditAccommodation(accommodation) : undefined}
+                />
+              )}
+
+              {accommodation?.startDay && accommodation?.endDay && 
                day > accommodation.startDay && day < accommodation.endDay && (
                 <AccommodationBox
                   title={accommodation.title}
@@ -960,8 +958,7 @@ export default function TravelDayCard({
                           </div>
                           {activity.description && (
                             <p className="text-sm text-gray-500 mt-1">{activity.description}</p>
-                          )}
-                        </div>
+                          )}                        </div>
                         {onAddActivity && (
                           <Button
                             variant="ghost"

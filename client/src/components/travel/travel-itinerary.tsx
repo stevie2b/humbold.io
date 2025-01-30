@@ -61,6 +61,25 @@ interface DayPlan {
   activities: ActivityItem[];
 }
 
+interface DayItinerary {
+  day: number;
+  accommodation?: AccommodationDetails;
+  transportation?: TransportationDetails | TransportationDetails[];
+  activities: ActivityItem[];
+}
+
+// Convert DayPlan to DayItinerary for ICS generation
+const convertToICSFormat = (plan: DayPlan): DayItinerary => {
+  return {
+    day: plan.day,
+    accommodation: plan.accommodation,
+    transportation: Array.isArray(plan.transportation) 
+      ? plan.transportation[0] 
+      : plan.transportation,
+    activities: plan.activities || []
+  };
+};
+
 export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] }) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
@@ -70,10 +89,9 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
 
   const { toast } = useToast();
   const [currentItinerary, setCurrentItinerary] = useState<DayPlan[]>(itinerary ?? []);
-  const startDate = new Date(); // This should be passed as a prop from the parent
+  const startDate = new Date(); 
   const [viewMode, setViewMode] = useState("cards");
 
-  // Edit handlers
   const handleEditAccommodation = (dayIndex: number, updatedAccommodation: AccommodationDetails) => {
     if (!updatedAccommodation.startDay || !updatedAccommodation.endDay) {
       toast({ 
@@ -87,7 +105,6 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
     setCurrentItinerary(prev => {
       const newItinerary = [...prev];
 
-      // First, remove any existing accommodation for the current stay
       const currentAccommodation = newItinerary[dayIndex].accommodation;
       if (currentAccommodation?.startDay && currentAccommodation?.endDay) {
         for (let i = currentAccommodation.startDay; i <= currentAccommodation.endDay; i++) {
@@ -98,11 +115,9 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
         }
       }
 
-      // Then apply the updated accommodation to all days in the new stay duration
       for (let i = updatedAccommodation.startDay; i <= updatedAccommodation.endDay; i++) {
         const idx = i - 1;
         if (idx < newItinerary.length) {
-          // Check if there's an existing different accommodation in this period
           const existingAccommodation = newItinerary[idx].accommodation;
           if (existingAccommodation && existingAccommodation.title !== updatedAccommodation.title) {
             toast({
@@ -130,18 +145,15 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
       const currentTransport = newItinerary[dayIndex].transportation;
 
       if (Array.isArray(currentTransport)) {
-        // If it's already an array, find and update the matching transportation
         const existingIndex = currentTransport.findIndex(t => t.title === updatedTransportation.title);
         if (existingIndex !== -1) {
           const updatedTransports = [...currentTransport];
           updatedTransports[existingIndex] = updatedTransportation;
           newItinerary[dayIndex].transportation = updatedTransports;
         } else {
-          // If not found, it might be a new entry, so add it
           newItinerary[dayIndex].transportation = [...currentTransport, updatedTransportation];
         }
       } else {
-        // If it's a single transportation, convert to array and update/add
         newItinerary[dayIndex].transportation = [updatedTransportation];
       }
 
@@ -255,7 +267,6 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
       }
     }
 
-
     day.activities.forEach(activity => {
       if (activity.location) {
         locations.push({
@@ -269,6 +280,28 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
 
     return locations;
   });
+
+  const handleDownloadICS = async () => {
+    try {
+      const icsItinerary = currentItinerary.map(convertToICSFormat);
+      const url = await generateICS(icsItinerary);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "travel-itinerary.ics";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast({ title: "Success", description: "Your itinerary has been downloaded successfully." });
+    } catch (error) {
+      console.error("Failed to download itinerary:", error);
+      toast({ 
+        title: "Error", 
+        description: "Failed to download itinerary. Please try again.", 
+        variant: "destructive" 
+      });
+    }
+  };
 
   if (!currentItinerary?.length) return null;
 
@@ -313,22 +346,7 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
 
       <div className="flex justify-center">
         <Button
-          onClick={async () => {
-            try {
-              const url = await generateICS(currentItinerary);
-              const link = document.createElement("a");
-              link.href = url;
-              link.download = "travel-itinerary.ics";
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              URL.revokeObjectURL(url);
-              toast({ title: "Success", description: "Your itinerary has been downloaded successfully." });
-            } catch (error) {
-              console.error("Failed to download itinerary:", error);
-              toast({ title: "Error", description: "Failed to download itinerary. Please try again.", variant: "destructive" });
-            }
-          }}
+          onClick={handleDownloadICS}
           className="w-auto px-6"
         >
           Download Itinerary
