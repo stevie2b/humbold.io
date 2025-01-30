@@ -229,12 +229,14 @@ function AccommodationEditDialog({
   accommodation,
   onSave,
   trigger,
-  startDate
+  startDate,
+  currentDay
 }: {
   accommodation: AccommodationDetails;
   onSave: (updatedAccommodation: AccommodationDetails) => void;
   trigger: React.ReactNode;
   startDate: Date;
+  currentDay: number;
 }) {
   const [edited, setEdited] = useState(accommodation);
   const [stayStartDate, setStayStartDate] = useState<Date | undefined>(
@@ -243,6 +245,15 @@ function AccommodationEditDialog({
   const [stayEndDate, setStayEndDate] = useState<Date | undefined>(
     accommodation.endDay ? addDays(startDate, accommodation.endDay - 1) : undefined
   );
+
+  useEffect(() => {
+    if (!stayStartDate) {
+      setStayStartDate(addDays(startDate, currentDay - 1));
+    }
+    if (!stayEndDate) {
+      setStayEndDate(addDays(startDate, currentDay - 1));
+    }
+  }, [currentDay, startDate]);
 
   const handleSave = () => {
     if (!stayStartDate || !stayEndDate) {
@@ -638,18 +649,33 @@ function AccommodationBox({
   onEdit,
   onRemove,
   accommodation,
-  startDate
+  startDate,
+  day
 }: {
   title: string;
   details: string;
   checkInTime?: string;
   checkOutTime?: string;
   type: 'checkin' | 'checkout' | 'full';
-  onEdit?: (accommodation: AccommodationDetails) => void;
+  onEdit?: (updatedAccommodation: AccommodationDetails) => void;
   onRemove?: () => void;
   accommodation: AccommodationDetails;
   startDate: Date;
+  day: number;
 }) {
+  const getDisplayTime = () => {
+    if (type === 'checkin' && checkInTime) {
+      return `Check-in: ${checkInTime}`;
+    }
+    if (type === 'checkout' && checkOutTime) {
+      return `Check-out: ${checkOutTime}`;
+    }
+    if (type === 'full') {
+      return 'Continued stay';
+    }
+    return '';
+  };
+
   return (
     <div className="relative bg-emerald-100 rounded-lg p-3 border border-emerald-200 mb-2">
       <div className="relative z-10">
@@ -658,21 +684,9 @@ function AccommodationBox({
             <div className="text-emerald-700 font-medium mb-1">{title}</div>
             <div className="text-sm text-emerald-600">
               {details}
-              {type === 'checkin' && checkInTime && (
-                <div className="mt-1">
-                  <span className="font-medium">Check-in:</span> {checkInTime}
-                </div>
-              )}
-              {type === 'checkout' && checkOutTime && (
-                <div className="mt-1">
-                  <span className="font-medium">Check-out:</span> {checkOutTime}
-                </div>
-              )}
-              {type === 'full' && (
-                <div className="mt-1">
-                  <span className="italic">Continued stay</span>
-                </div>
-              )}
+              <div className="mt-1 italic">
+                {getDisplayTime()}
+              </div>
             </div>
           </div>
           <div className="flex space-x-1">
@@ -681,6 +695,7 @@ function AccommodationBox({
                 accommodation={accommodation}
                 onSave={onEdit}
                 startDate={startDate}
+                currentDay={day}
                 trigger={
                   <Button
                     variant="ghost"
@@ -708,13 +723,13 @@ function AccommodationBox({
       <div className="absolute inset-0 flex rounded-lg overflow-hidden">
         {Array.from({ length: 24 }, (_, i) => {
           let isColored = false;
-          if (type === 'checkin') {
-            const checkInHour = checkInTime ? parseInt(checkInTime.split(':')[0]) : 14;
+          if (type === 'checkin' && checkInTime) {
+            const checkInHour = parseInt(checkInTime.split(':')[0]);
             isColored = i >= checkInHour;
-          } else if (type === 'checkout') {
-            const checkOutHour = checkOutTime ? parseInt(checkOutTime.split(':')[0]) : 11;
+          } else if (type === 'checkout' && checkOutTime) {
+            const checkOutHour = parseInt(checkOutTime.split(':')[0]);
             isColored = i < checkOutHour;
-          } else {
+          } else if (type === 'full') {
             isColored = true;
           }
           return (
@@ -822,6 +837,7 @@ export default function TravelDayCard({
                 onRemove={onRemoveAccommodation}
                 accommodation={accommodation}
                 startDate={startDate}
+                day={day}
               />
             )}
           </div>
