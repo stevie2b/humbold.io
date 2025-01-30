@@ -765,6 +765,22 @@ export default function TravelDayCard({
               <div className="flex items-center gap-2 mb-2">
                 <MapPin className="h-4 w-4 text-emerald-600" />
                 <h4 className="text-sm font-medium text-emerald-700">Accommodation</h4>
+                {onEditAccommodation && (
+                  <AccommodationEditDialog
+                    accommodation={accommodation}
+                    onSave={onEditAccommodation}
+                    trigger={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    }
+                    startDate={startDate}
+                  />
+                )}
               </div>
 
               {/* Handle checkout display */}
@@ -790,15 +806,15 @@ export default function TravelDayCard({
               )}
 
               {/* Handle middle days */}
-              {accommodation.startDay && accommodation.endDay &&
-                day > accommodation.startDay && day < accommodation.endDay && (
-                  <AccommodationBox
-                    title={accommodation.title}
-                    details={accommodation.details}
-                    type="full"
-                    onEdit={onEditAccommodation ? () => onEditAccommodation(accommodation) : undefined}
-                  />
-                )}
+              {accommodation.startDay && accommodation.endDay && 
+               day > accommodation.startDay && day < accommodation.endDay && (
+                <AccommodationBox
+                  title={accommodation.title}
+                  details={accommodation.details}
+                  type="full"
+                  onEdit={onEditAccommodation ? () => onEditAccommodation(accommodation) : undefined}
+                />
+              )}
             </div>
           )}
 
