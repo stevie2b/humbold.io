@@ -783,8 +783,8 @@ export default function TravelDayCard({
                 )}
               </div>
 
-              {/* Handle accommodation display based on stay duration */}
-              {accommodation?.startDay === day && (
+              {/* Display accommodation based on simple conditions */}
+              {(!accommodation.startDay || accommodation.startDay === day) && (
                 <AccommodationBox
                   title={accommodation.title}
                   details={accommodation.details}
@@ -794,7 +794,7 @@ export default function TravelDayCard({
                 />
               )}
 
-              {accommodation?.endDay === day && (
+              {accommodation.endDay === day && (
                 <AccommodationBox
                   title={accommodation.title}
                   details={accommodation.details}
@@ -804,8 +804,18 @@ export default function TravelDayCard({
                 />
               )}
 
-              {accommodation?.startDay && accommodation?.endDay && 
+              {accommodation.startDay && accommodation.endDay && 
                day > accommodation.startDay && day < accommodation.endDay && (
+                <AccommodationBox
+                  title={accommodation.title}
+                  details={accommodation.details}
+                  type="full"
+                  onEdit={onEditAccommodation ? () => onEditAccommodation(accommodation) : undefined}
+                />
+              )}
+
+              {/* Fallback case: if no start/end day is set, show as full stay */}
+              {!accommodation.startDay && !accommodation.endDay && (
                 <AccommodationBox
                   title={accommodation.title}
                   details={accommodation.details}
