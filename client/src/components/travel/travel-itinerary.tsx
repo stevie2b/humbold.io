@@ -73,13 +73,40 @@ export default function TravelItinerary({ itinerary }) {
   const startDate = new Date();
   const [viewMode, setViewMode] = useState("cards");
 
-  const scrollPrev = useCallback(() => {
-    emblaApi?.scrollPrev();
-  }, [emblaApi]);
-
-  const scrollNext = useCallback(() => {
-    emblaApi?.scrollNext();
-  }, [emblaApi]);
+  // Generate recommended activities for each day
+  const generateRecommendations = (day: DayPlan): ActivityItem[] => {
+    const baseTime = "10:00"; // Default time for recommendations
+    return [
+      {
+        time: baseTime,
+        duration: "02:00",
+        title: `Local Cultural Experience in ${day.accommodation?.title?.split(',')[0] || 'the Area'}`,
+        category: "culture",
+        description: "Immerse yourself in local traditions and customs"
+      },
+      {
+        time: baseTime,
+        duration: "02:00",
+        title: `Hidden Gems Walking Tour`,
+        category: "exploration",
+        description: "Discover lesser-known spots and local favorites"
+      },
+      {
+        time: baseTime,
+        duration: "02:00",
+        title: `Local Food Experience`,
+        category: "culinary",
+        description: "Taste authentic local cuisine and specialties"
+      },
+      {
+        time: baseTime,
+        duration: "02:00",
+        title: "Your Own Idea",
+        category: "custom",
+        description: "Add your personal touch to the itinerary"
+      }
+    ];
+  };
 
   // Edit handlers
   const handleEditAccommodation = (dayIndex: number, updatedAccommodation: AccommodationDetails) => {
@@ -201,6 +228,7 @@ export default function TravelItinerary({ itinerary }) {
                   <TravelDayCard
                     {...day}
                     startDate={startDate}
+                    recommendations={generateRecommendations(day)}
                     onEditAccommodation={(updatedAccommodation) => handleEditAccommodation(index, updatedAccommodation)}
                     onEditTransportation={(updatedTransportation) => handleEditTransportation(index, updatedTransportation)}
                     onEditActivity={(activityIndex, updatedActivity) => handleEditActivity(index, activityIndex, updatedActivity)}
