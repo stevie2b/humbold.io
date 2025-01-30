@@ -19,11 +19,11 @@ import { format } from "date-fns";
 function LocationSearch({ 
   onLocationSelect,
   initialAddress = "",
-  searchType = "" // Add searchType parameter
+  searchType = "" 
 }: { 
   onLocationSelect: (location: { lat: number; lng: number; address: string }) => void;
   initialAddress?: string;
-  searchType?: string; // Optional parameter for specific place types (e.g., "restaurant", "entertainment")
+  searchType?: string; 
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -163,10 +163,10 @@ function ActivityEditDialog({
               setEditedActivity({
                 ...editedActivity,
                 location: { lat, lng },
-                title: address.split(',')[0] // Use the first part of the address as the title
+                title: address.split(',')[0] 
               });
             }}
-            searchType="venue" // This will help find specific places
+            searchType="venue" 
             initialAddress={activity.title}
           />
         </div>
@@ -472,9 +472,9 @@ interface TransportationDetails {
 
 interface TravelDayCardProps {
   day: number;
-  accommodation: AccommodationDetails;
-  transportation: TransportationDetails;
-  activities: ActivityItem[];
+  accommodation?: AccommodationDetails;
+  transportation?: TransportationDetails;
+  activities?: ActivityItem[];
   onRemoveActivity?: (index: number) => void;
   onAddActivity?: (activity: ActivityItem) => void;
   onEditActivity?: (index: number, updatedActivity: ActivityItem) => void;
@@ -483,6 +483,7 @@ interface TravelDayCardProps {
   recommendations?: ActivityItem[];
   isFirstCard?: boolean;
   isLastCard?: boolean;
+  startDate?: Date;
 }
 
 function getHourRange(startTime: string, endTime?: string): number[] {
@@ -512,7 +513,7 @@ export default function TravelDayCard({
   day, 
   accommodation, 
   transportation, 
-  activities,
+  activities = [],
   onRemoveActivity,
   onAddActivity,
   onEditActivity,
@@ -522,13 +523,15 @@ export default function TravelDayCard({
   isFirstCard = false,
   isLastCard = false,
   startDate = new Date() 
-}: TravelDayCardProps & { startDate?: Date }) {
+}: TravelDayCardProps) {
 
-  const isWithinStay = day >= accommodation.startDay && day <= accommodation.endDay;
-  const isCheckInDay = day === accommodation.startDay;
-  const isCheckOutDay = day === accommodation.endDay;
+  const isWithinStay = accommodation 
+    ? (day >= accommodation.startDay && day <= accommodation.endDay)
+    : false;
+  const isCheckInDay = accommodation ? day === accommodation.startDay : false;
+  const isCheckOutDay = accommodation ? day === accommodation.endDay : false;
 
-  const accomHours = isWithinStay ? 
+  const accomHours = isWithinStay && accommodation ? 
     (isCheckInDay ? 
       getHourRange(accommodation.checkInTime, "23:59") :
       isCheckOutDay ?
@@ -536,15 +539,17 @@ export default function TravelDayCard({
         getHourRange("00:00", "23:59")
     ) : [];
 
-  const transHours = transportation?.type === 'continuous' ?
-    getHourRange("00:00", "23:59") :
-    transportation.departureTime && transportation.arrivalTime ?
-      getHourRange(transportation.departureTime, transportation.arrivalTime) :
-      [];
+  const transHours = transportation ? (
+    transportation.type === 'continuous' ?
+      getHourRange("00:00", "23:59") :
+      transportation.departureTime && transportation.arrivalTime ?
+        getHourRange(transportation.departureTime, transportation.arrivalTime) :
+        []
+  ) : [];
 
-  const activityHours = activities.flatMap(activity => 
+  const activityHours = activities ? activities.flatMap(activity => 
     getHourRange(activity.time, activity.duration)
-  );
+  ) : [];
 
   const containerClasses = `
     h-full
@@ -562,11 +567,11 @@ export default function TravelDayCard({
         <div className="relative h-48 overflow-hidden rounded-t-lg">
           <img 
             src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${
-              accommodation.coordinates 
+              accommodation?.coordinates 
                 ? `${accommodation.coordinates.lng},${accommodation.coordinates.lat},12,0`
                 : '0,0,2,0'
             }/600x300@2x?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}`}
-            alt={`Map of ${accommodation.title}`}
+            alt={`Map of day ${day}`}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/90">
@@ -579,181 +584,187 @@ export default function TravelDayCard({
         </div>
 
         <CardContent className="p-4 space-y-4">
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-emerald-600" />
-                <h4 className="text-sm font-medium text-emerald-700">
-                  {isWithinStay ? `Stay at ${accommodation.title}` : 'No Accommodation'}
-                </h4>
-              </div>
-              {onEditAccommodation && (
-                <AccommodationEditDialog
-                  accommodation={accommodation}
-                  onSave={onEditAccommodation}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  }
-                />
-              )}
-            </div>
-            <div className="relative bg-emerald-50 rounded-lg p-3 border border-emerald-200">
-              <div className="relative z-10">
-                {isWithinStay ? (
-                  <>
-                    <div className="text-emerald-700 font-medium mb-1">
-                      {accommodation.title}
-                    </div>
-                    <div className="text-sm text-emerald-600">
-                      {accommodation.details}
-                      <div className="mt-1">
-                        {isCheckInDay && (
-                          <div>
-                            <span className="font-medium">Check-in:</span> {accommodation.checkInTime}
-                          </div>
-                        )}
-                        {isCheckOutDay && (
-                          <div>
-                            <span className="font-medium">Check-out:</span> {accommodation.checkOutTime}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-emerald-600 text-sm italic">
-                    No accommodation scheduled for this day
-                  </div>
-                )}
-              </div>
-              <div className="absolute inset-0 flex rounded-lg overflow-hidden">
-                {Array.from({ length: 24 }, (_, i) => (
-                  <div 
-                    key={i}
-                    className={`flex-1 ${accomHours.includes(i) ? 'bg-emerald-200/50' : ''}`}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="text-sm font-medium text-amber-700">Transportation</h4>
-              {onEditTransportation && (
-                <TransportationEditDialog
-                  transportation={transportation}
-                  onSave={onEditTransportation}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  }
-                />
-              )}
-            </div>
-            <div className="relative bg-amber-50 rounded-lg p-3 border border-amber-200">
-              <div className="relative z-10">
-                <div className="text-amber-700 font-medium mb-1">
-                  {transportation.title}
-                  {transportation.type === 'scheduled' && transportation.flightNumber && (
-                    <span className="text-sm ml-2">({transportation.flightNumber})</span>
-                  )}
+          {accommodation && (
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-emerald-600" />
+                  <h4 className="text-sm font-medium text-emerald-700">
+                    {isWithinStay ? `Stay at ${accommodation.title}` : 'No Accommodation'}
+                  </h4>
                 </div>
-                <div className="text-sm text-amber-600">
-                  {transportation.details}
-                  {transportation.type === 'scheduled' && (
-                    <div className="mt-1">
-                      <span className="font-medium">Departure:</span> {transportation.departureTime} |{" "}
-                      <span className="font-medium">Arrival:</span> {transportation.arrivalTime}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="absolute inset-0 flex rounded-lg overflow-hidden">
-                {Array.from({ length: 24 }, (_, i) => (
-                  <div 
-                    key={i}
-                    className={`flex-1 ${transHours.includes(i) ? 'bg-amber-200/50' : ''}`}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="text-sm font-medium text-blue-700 mb-2">Activities</h4>
-            <div className="space-y-2">
-              {activities.map((activity, index) => (
-                <div 
-                  key={index} 
-                  className="relative bg-blue-50 rounded-lg p-3 border border-blue-200 flex items-center justify-between"
-                >
-                  <div className="relative z-10 flex-1">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-blue-600 font-medium">
-                        {activity.time}
-                        {activity.duration && ` - ${activity.duration}`}
-                      </span>
-                      <span className="text-blue-700">
-                        {activity.title}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="relative z-10 flex items-center space-x-1">
-                    {onEditActivity && (
-                      <ActivityEditDialog
-                        activity={activity}
-                        onSave={(updatedActivity) => onEditActivity(index, updatedActivity)}
-                        trigger={
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        }
-                      />
-                    )}
-                    {onRemoveActivity && (
+                {onEditAccommodation && (
+                  <AccommodationEditDialog
+                    accommodation={accommodation}
+                    onSave={onEditAccommodation}
+                    trigger={
                       <Button
                         variant="ghost"
                         size="sm"
                         className="h-8 w-8 p-0"
-                        onClick={() => onRemoveActivity(index)}
                       >
-                        <X className="h-4 w-4" />
+                        <Pencil className="h-4 w-4" />
                       </Button>
+                    }
+                  />
+                )}
+              </div>
+              <div className="relative bg-emerald-50 rounded-lg p-3 border border-emerald-200">
+                <div className="relative z-10">
+                  {isWithinStay ? (
+                    <>
+                      <div className="text-emerald-700 font-medium mb-1">
+                        {accommodation.title}
+                      </div>
+                      <div className="text-sm text-emerald-600">
+                        {accommodation.details}
+                        <div className="mt-1">
+                          {isCheckInDay && (
+                            <div>
+                              <span className="font-medium">Check-in:</span> {accommodation.checkInTime}
+                            </div>
+                          )}
+                          {isCheckOutDay && (
+                            <div>
+                              <span className="font-medium">Check-out:</span> {accommodation.checkOutTime}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-emerald-600 text-sm italic">
+                      No accommodation scheduled for this day
+                    </div>
+                  )}
+                </div>
+                <div className="absolute inset-0 flex rounded-lg overflow-hidden">
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <div 
+                      key={i}
+                      className={`flex-1 ${accomHours.includes(i) ? 'bg-emerald-200/50' : ''}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {transportation && (
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="text-sm font-medium text-amber-700">Transportation</h4>
+                {onEditTransportation && (
+                  <TransportationEditDialog
+                    transportation={transportation}
+                    onSave={onEditTransportation}
+                    trigger={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
+                )}
+              </div>
+              <div className="relative bg-amber-50 rounded-lg p-3 border border-amber-200">
+                <div className="relative z-10">
+                  <div className="text-amber-700 font-medium mb-1">
+                    {transportation.title}
+                    {transportation.type === 'scheduled' && transportation.flightNumber && (
+                      <span className="text-sm ml-2">({transportation.flightNumber})</span>
                     )}
                   </div>
-                  <div className="absolute inset-0 flex rounded-lg overflow-hidden">
-                    {Array.from({ length: 24 }, (_, i) => {
-                      const hours = getHourRange(activity.time, activity.duration);
-                      return (
-                        <div 
-                          key={i}
-                          className={`flex-1 ${hours.includes(i) ? 'bg-blue-200/50' : ''}`}
-                        />
-                      );
-                    })}
+                  <div className="text-sm text-amber-600">
+                    {transportation.details}
+                    {transportation.type === 'scheduled' && (
+                      <div className="mt-1">
+                        <span className="font-medium">Departure:</span> {transportation.departureTime} |{" "}
+                        <span className="font-medium">Arrival:</span> {transportation.arrivalTime}
+                      </div>
+                    )}
                   </div>
                 </div>
-              ))}
+                <div className="absolute inset-0 flex rounded-lg overflow-hidden">
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <div 
+                      key={i}
+                      className={`flex-1 ${transHours.includes(i) ? 'bg-amber-200/50' : ''}`}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
-          {recommendations.length > 0 && (
+          {activities && activities.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium text-blue-700 mb-2">Activities</h4>
+              <div className="space-y-2">
+                {activities.map((activity, index) => (
+                  <div 
+                    key={index} 
+                    className="relative bg-blue-50 rounded-lg p-3 border border-blue-200 flex items-center justify-between"
+                  >
+                    <div className="relative z-10 flex-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-blue-600 font-medium">
+                          {activity.time}
+                          {activity.duration && ` - ${activity.duration}`}
+                        </span>
+                        <span className="text-blue-700">
+                          {activity.title}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="relative z-10 flex items-center space-x-1">
+                      {onEditActivity && (
+                        <ActivityEditDialog
+                          activity={activity}
+                          onSave={(updatedActivity) => onEditActivity(index, updatedActivity)}
+                          trigger={
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          }
+                        />
+                      )}
+                      {onRemoveActivity && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => onRemoveActivity(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="absolute inset-0 flex rounded-lg overflow-hidden">
+                      {Array.from({ length: 24 }, (_, i) => {
+                        const hours = getHourRange(activity.time, activity.duration);
+                        return (
+                          <div 
+                            key={i}
+                            className={`flex-1 ${hours.includes(i) ? 'bg-blue-200/50' : ''}`}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {recommendations && recommendations.length > 0 && (
             <div>
               <h4 className="text-sm font-medium text-gray-700 mb-2">Recommended Activities</h4>
               <div className="space-y-2">
