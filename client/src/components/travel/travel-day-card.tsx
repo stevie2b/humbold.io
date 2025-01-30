@@ -110,7 +110,7 @@ function LocationSearch({
   );
 }
 
-// Update ActivityEditDialog to use searchType
+// Updates to ActivityEditDialog and recommendations section
 function ActivityEditDialog({
   activity,
   onSave,
@@ -122,25 +122,52 @@ function ActivityEditDialog({
 }) {
   const [editedActivity, setEditedActivity] = useState(activity);
   const [timeError, setTimeError] = useState('');
+  const [endTime, setEndTime] = useState(activity.duration ? calculateEndTime(activity.time, activity.duration) : '');
 
-  const validateTimes = (startTime: string, duration: string) => {
-    if (!duration) return true;
-
+  const calculateEndTime = (startTime: string, duration: string): string => {
     const [startHour, startMinute] = startTime.split(':').map(Number);
     const [durationHour, durationMinute] = duration.split(':').map(Number);
 
+    const totalMinutes = startHour * 60 + startMinute + durationHour * 60 + durationMinute;
+    const endHour = Math.floor(totalMinutes / 60) % 24;
+    const endMinute = totalMinutes % 60;
+
+    return `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+  };
+
+  const calculateDuration = (startTime: string, endTimeStr: string): string => {
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const [endHour, endMinute] = endTimeStr.split(':').map(Number);
+
+    let totalMinutes = (endHour * 60 + endMinute) - (startHour * 60 + startMinute);
+    if (totalMinutes < 0) totalMinutes += 24 * 60;  // Handle crossing midnight
+
+    const durationHours = Math.floor(totalMinutes / 60);
+    const durationMinutes = totalMinutes % 60;
+
+    return `${durationHours.toString().padStart(2, '0')}:${durationMinutes.toString().padStart(2, '0')}`;
+  };
+
+  const validateTimes = (startTime: string, endTimeStr: string) => {
+    if (!endTimeStr) return true;
+
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const [endHour, endMinute] = endTimeStr.split(':').map(Number);
+
     const startMinutes = startHour * 60 + startMinute;
-    const endMinutes = startMinutes + durationHour * 60 + durationMinute;
+    let endMinutes = endHour * 60 + endMinute;
+    if (endMinutes < startMinutes) endMinutes += 24 * 60;  // Handle crossing midnight
 
     return endMinutes > startMinutes;
   };
 
   const handleSave = () => {
-    if (!validateTimes(editedActivity.time, editedActivity.duration || '')) {
+    if (!validateTimes(editedActivity.time, endTime)) {
       setTimeError('End time must be after start time');
       return;
     }
-    onSave(editedActivity);
+    const duration = calculateDuration(editedActivity.time, endTime);
+    onSave({ ...editedActivity, duration });
   };
 
   return (
@@ -171,22 +198,28 @@ function ActivityEditDialog({
               onChange={(e) => {
                 setTimeError('');
                 setEditedActivity({ ...editedActivity, time: e.target.value });
+                setEndTime(calculateEndTime(e.target.value, editedActivity.duration || ''))
               }}
             />
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="duration">Duration</Label>
+            <Label htmlFor="endTime">End Time</Label>
             <Input
-              id="duration"
+              id="endTime"
               type="time"
-              value={editedActivity.duration || ''}
+              value={endTime}
               onChange={(e) => {
                 setTimeError('');
-                setEditedActivity({ ...editedActivity, duration: e.target.value });
+                setEndTime(e.target.value);
               }}
             />
             {timeError && <p className="text-sm text-red-500">{timeError}</p>}
+            {editedActivity.time && endTime && !timeError && (
+              <p className="text-sm text-muted-foreground">
+                Duration: {calculateDuration(editedActivity.time, endTime).split(':').map((n, i) => `${n}${i === 0 ? 'h' : 'm'}`).join(' ')}
+              </p>
+            )}
           </div>
 
           <LocationSearch
@@ -833,38 +866,44 @@ export default function TravelDayCard({
               <h4 className="text-sm font-medium text-gray-700 mb-2">Recommended Activities</h4>
               <div className="space-y-2">
                 {recommendations.map((activity, index) => {
-                  // Set a more reasonable time for the activity based on existing activities
-                  const suggestedTime = "14:00"; // Default to 2 PM
-                  const suggestedDuration = "02:00"; // 2 hours duration
-
-                  return (
-                    <div
-                      key={index}
-                      className="relative bg-gray-50 rounded-lg p-3 border border-gray-200 flex items-center justify-between"
-                    >
-                      <div className="relative z-10 flex-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-gray-700">
-                            {activity.title}
-                          </span>
-                        </div>
-                      </div>
-                      {onAddActivity && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="relative z-10 h-8 w-8 p-0"
-                          onClick={() => onAddActivity({
-                            ...activity,
-                            time: suggestedTime,
-                            duration: suggestedDuration
-                          })}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
+                  // Check if this activity (except "Own Idea") has already been added
+                  const isOwnIdea = activity.category === 'custom';
+                  const isAlreadyAdded = !isOwnIdea && activities.some(
+                    existingActivity => existingActivity.title === activity.title
                   );
+
+                  // Only show if it's not already added or if it's "Own Idea"
+                  if (!isAlreadyAdded || isOwnIdea) {
+                    return (
+                      <div
+                        key={index}
+                        className="relative bg-gray-50 rounded-lg p-3 border border-gray-200 flex items-center justify-between"
+                      >
+                        <div className="relative z-10 flex-1">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-gray-700">
+                              {activity.title}
+                            </span>
+                          </div>
+                        </div>
+                        {onAddActivity && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="relative z-10 h-8 w-8 p-0"
+                            onClick={() => onAddActivity({
+                              ...activity,
+                              time: "14:00",
+                              duration: "02:00"
+                            })}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  }
+                  return null;
                 })}
               </div>
             </div>

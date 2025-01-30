@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight, Map, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -61,7 +61,7 @@ interface DayPlan {
   activities: ActivityItem[];
 }
 
-export default function TravelItinerary({ itinerary }) {
+export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] }) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     dragFree: true,
@@ -169,12 +169,32 @@ export default function TravelItinerary({ itinerary }) {
     setCurrentItinerary(prev => {
       const newItinerary = [...prev];
       // Check if activity already exists to prevent duplicates
-      const exists = newItinerary[dayIndex].activities.some(
-        activity => activity.title === newActivity.title
-      );
+      const exists = newActivity.category !== 'custom' && // Skip duplicate check for custom activities
+        newItinerary[dayIndex].activities.some(
+          activity => activity.title === newActivity.title
+        );
 
       if (!exists) {
-        newItinerary[dayIndex].activities.push(newActivity);
+        // Calculate a suitable time slot
+        const lastActivityTime = newItinerary[dayIndex].activities.length > 0 
+          ? newItinerary[dayIndex].activities.reduce((latest, activity) => {
+              const [hours, minutes] = activity.time.split(':').map(Number);
+              const [durationHours = 0, durationMinutes = 0] = (activity.duration || '00:00').split(':').map(Number);
+              const endTime = hours * 60 + minutes + durationHours * 60 + durationMinutes;
+              return Math.max(latest, endTime);
+            }, 0)
+          : 14 * 60; // Default to 2 PM if no activities
+
+        // Add 30 minutes buffer between activities
+        const suggestedStartTime = lastActivityTime + 30;
+        const suggestedHours = Math.floor(suggestedStartTime / 60);
+        const suggestedMinutes = suggestedStartTime % 60;
+
+        newItinerary[dayIndex].activities.push({
+          ...newActivity,
+          time: `${suggestedHours.toString().padStart(2, '0')}:${suggestedMinutes.toString().padStart(2, '0')}`,
+          duration: "02:00" // Default 2-hour duration
+        });
         toast({ title: "Success", description: "Activity added successfully" });
       } else {
         toast({ 
@@ -195,7 +215,7 @@ export default function TravelItinerary({ itinerary }) {
       locations.push({
         title: day.accommodation.title,
         coordinates: day.accommodation.coordinates,
-        type: 'accommodation',
+        type: 'accommodation' as const,
         day: day.day
       });
     }
@@ -204,13 +224,13 @@ export default function TravelItinerary({ itinerary }) {
       locations.push({
         title: `${day.transportation.title} (Departure)`,
         coordinates: day.transportation.route.from,
-        type: 'transportation',
+        type: 'transportation' as const,
         day: day.day
       });
       locations.push({
         title: `${day.transportation.title} (Arrival)`,
         coordinates: day.transportation.route.to,
-        type: 'transportation',
+        type: 'transportation' as const,
         day: day.day
       });
     }
@@ -220,7 +240,7 @@ export default function TravelItinerary({ itinerary }) {
         locations.push({
           title: activity.title,
           coordinates: activity.location,
-          type: 'activity',
+          type: 'activity' as const,
           day: day.day
         });
       }
