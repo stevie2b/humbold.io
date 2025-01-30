@@ -80,6 +80,25 @@ const convertToICSFormat = (plan: DayPlan): DayItinerary => {
   };
 };
 
+interface TravelDayCardProps {
+  day: number;
+  accommodation?: AccommodationDetails;
+  transportation?: TransportationDetails | TransportationDetails[];
+  activities: ActivityItem[];
+  onRemoveActivity?: (index: number) => void;
+  onAddActivity?: (activity: ActivityItem) => void;
+  onEditActivity?: (index: number, updatedActivity: ActivityItem) => void;
+  onEditAccommodation?: (updatedAccommodation: AccommodationDetails) => void;
+  onRemoveAccommodation?: () => void;
+  onAddAccommodation?: () => void;
+  onEditTransportation?: (updatedTransportation: TransportationDetails) => void;
+  onAddTransportation?: (transportation: TransportationDetails) => void;
+  recommendations?: ActivityItem[];
+  isFirstCard?: boolean;
+  isLastCard?: boolean;
+  startDate?: Date;
+}
+
 export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] }) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
@@ -227,6 +246,48 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
     toast({ title: "Success", description: "New transportation added" });
   };
 
+  const handleRemoveAccommodation = (dayIndex: number) => {
+    setCurrentItinerary(prev => {
+      const newItinerary = [...prev];
+      const currentAccommodation = newItinerary[dayIndex].accommodation;
+
+      if (currentAccommodation?.startDay && currentAccommodation?.endDay) {
+        // Remove accommodation from all days it spans
+        for (let i = currentAccommodation.startDay; i <= currentAccommodation.endDay; i++) {
+          const idx = i - 1;
+          if (idx >= 0 && idx < newItinerary.length) {
+            delete newItinerary[idx].accommodation;
+          }
+        }
+      } else {
+        // If no start/end day, just remove from current day
+        delete newItinerary[dayIndex].accommodation;
+      }
+
+      return newItinerary;
+    });
+    toast({ title: "Success", description: "Accommodation removed successfully" });
+  };
+
+  const handleAddAccommodation = (dayIndex: number) => {
+    const timestamp = Date.now();
+    const newAccommodation: AccommodationDetails = {
+      title: `New Accommodation ${timestamp}`,
+      details: "Enter accommodation details",
+      startDay: dayIndex + 1,
+      endDay: dayIndex + 1,
+      checkInTime: "14:00",
+      checkOutTime: "11:00"
+    };
+
+    setCurrentItinerary(prev => {
+      const newItinerary = [...prev];
+      newItinerary[dayIndex].accommodation = newAccommodation;
+      return newItinerary;
+    });
+    toast({ title: "Success", description: "New accommodation added" });
+  };
+
   const mapLocations = currentItinerary.flatMap(day => {
     const locations = [];
 
@@ -337,6 +398,8 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
                     startDate={startDate}
                     recommendations={generateRecommendations(day)}
                     onEditAccommodation={(updatedAccommodation) => handleEditAccommodation(index, updatedAccommodation)}
+                    onRemoveAccommodation={() => handleRemoveAccommodation(index)}
+                    onAddAccommodation={() => handleAddAccommodation(index)}
                     onEditTransportation={(updatedTransportation) => handleEditTransportation(index, updatedTransportation)}
                     onAddTransportation={() => handleAddTransportation(index)}
                     onEditActivity={(activityIndex, updatedActivity) => handleEditActivity(index, activityIndex, updatedActivity)}

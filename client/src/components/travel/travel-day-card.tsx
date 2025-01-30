@@ -3,7 +3,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { X, Plus, Pencil, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -104,8 +103,10 @@ interface TravelDayCardProps {
   onAddActivity?: (activity: ActivityItem) => void;
   onEditActivity?: (index: number, updatedActivity: ActivityItem) => void;
   onEditAccommodation?: (updatedAccommodation: AccommodationDetails) => void;
+  onRemoveAccommodation?: (accommodation: AccommodationDetails) => void;
   onEditTransportation?: (updatedTransportation: TransportationDetails) => void;
   onAddTransportation?: (transportation: TransportationDetails) => void;
+  onAddAccommodation?: (accommodation: AccommodationDetails) => void;
   recommendations?: ActivityItem[];
   isFirstCard?: boolean;
   isLastCard?: boolean;
@@ -634,7 +635,8 @@ function AccommodationBox({
   checkInTime,
   checkOutTime,
   type,
-  onEdit
+  onEdit,
+  onRemove
 }: {
   title: string;
   details: string;
@@ -642,6 +644,7 @@ function AccommodationBox({
   checkOutTime?: string;
   type: 'checkin' | 'checkout' | 'full';
   onEdit?: () => void;
+  onRemove?: () => void;
 }) {
   return (
     <div className="relative bg-emerald-100 rounded-lg p-3 border border-emerald-200 mb-2">
@@ -668,16 +671,28 @@ function AccommodationBox({
               )}
             </div>
           </div>
-          {onEdit && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={onEdit}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          )}
+          <div className="flex space-x-1">
+            {onEdit && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={onEdit}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            )}
+            {onRemove && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={onRemove}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
       <div className="absolute inset-0 flex rounded-lg overflow-hidden">
@@ -705,7 +720,6 @@ function AccommodationBox({
 }
 
 
-
 // Main component
 export default function TravelDayCard({
   day,
@@ -716,8 +730,10 @@ export default function TravelDayCard({
   onAddActivity,
   onEditActivity,
   onEditAccommodation,
+  onRemoveAccommodation,
   onEditTransportation,
   onAddTransportation,
+  onAddAccommodation,
   recommendations = [],
   isFirstCard = false,
   isLastCard = false,
@@ -761,30 +777,23 @@ export default function TravelDayCard({
         </div>
 
         <CardContent className="p-4 space-y-4">
-          {accommodation && (
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <MapPin className="h-4 w-4 text-emerald-600" />
-                <h4 className="text-sm font-medium text-emerald-700">Accommodation</h4>
-                {onEditAccommodation && (
-                  <AccommodationEditDialog
-                    accommodation={accommodation}
-                    onSave={onEditAccommodation}
-                    trigger={
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    }
-                    startDate={startDate}
-                  />
-                )}
-              </div>
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <MapPin className="h-4 w-4 text-emerald-600" />
+              <h4 className="text-sm font-medium text-emerald-700">Accommodation</h4>
+              {onAddAccommodation && !accommodation && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={onAddAccommodation}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
 
-              {/* Single accommodation display logic */}
+            {accommodation && (
               <AccommodationBox
                 title={accommodation.title}
                 details={accommodation.details}
@@ -798,9 +807,10 @@ export default function TravelDayCard({
                     : "full"
                 }
                 onEdit={onEditAccommodation ? () => onEditAccommodation(accommodation) : undefined}
+                onRemove={onRemoveAccommodation}
               />
-            </div>
-          )}
+            )}
+          </div>
 
           <div>
             <div className="flex justify-between items-center mb-2">
@@ -944,14 +954,14 @@ export default function TravelDayCard({
                           </div>
                           {activity.description && (
                             <p className="text-sm text-gray-500 mt-1">{activity.description}</p>
-                          )}                        </div>
+                          )}
+                        </div>
                         {onAddActivity && (
                           <Button
                             variant="ghost"
                             size="sm"
                             className="relative z-10 h-8 w-8 p-0"
-                            onClick={() => onAddActivity({
-                              ...activity,
+                            onClick={() => onAddActivity({...activity,
                               time: suggestedTime,
                               duration: "02:00"
                             })}
