@@ -733,89 +733,27 @@ export default function TravelDayCard({
     return `${format(currentDate, 'EEE')}, ${format(currentDate, 'dd.MM')}. (day ${dayNum})`;
   };
 
-  const getHourRange = (startTime: string, endTime?: string): number[] => {
-    const getHours = (time: string) => {
-      const [hours, minutes] = time.split(':').map(Number);
-      return hours + minutes / 60;
-    };
+  // Extract city information from accommodation and transportation
+  const getCurrentLocation = () => {
+    if (!accommodation && !transportation) return "";
 
-    const start = getHours(startTime);
-    const end = endTime ? getHours(endTime) : start + 1;
-
-    const hours: number[] = [];
-    for (let hour = Math.floor(start); hour < Math.ceil(end); hour++) {
-      hours.push(hour);
+    // If there's transportation, show transition
+    if (transportation) {
+      const trans = Array.isArray(transportation) ? transportation[0] : transportation;
+      if (trans.route?.from && trans.route?.to) {
+        const fromCity = trans.title.split(' to ')[0];
+        const toCity = trans.title.split(' to ')[1];
+        return `${fromCity} → ${toCity}`;
+      }
     }
-    return hours;
+
+    // Otherwise show current accommodation city
+    if (accommodation) {
+      return accommodation.title.split(',')[0];
+    }
+
+    return "";
   };
-
-
-  const isWithinStay = accommodation?.startDay && accommodation?.endDay
-    ? (day >= accommodation.startDay && day <= accommodation.endDay)
-    : false;
-  const isCheckInDay = accommodation?.startDay === day;
-  const isCheckOutDay = accommodation?.endDay === day;
-  const isMiddleDay = isWithinStay && !isCheckInDay && !isCheckOutDay;
-
-  const getAccommodationColorClass = (hour: number): string => {
-    if (!accommodation) return '';
-
-    const isWithinStay = accommodation.startDay && accommodation.endDay && 
-      day >= accommodation.startDay && day <= accommodation.endDay;
-
-    if (!isWithinStay) return '';
-
-    const isCheckInDay = day === accommodation.startDay;
-    const isCheckOutDay = day === accommodation.endDay;
-    const isMiddleDay = isWithinStay && !isCheckInDay && !isCheckOutDay;
-
-    const checkInHour = accommodation.checkInTime
-      ? parseInt(accommodation.checkInTime.split(':')[0])
-      : 14;
-    const checkOutHour = accommodation.checkOutTime
-      ? parseInt(accommodation.checkOutTime.split(':')[0])
-      : 11;
-
-    if (isCheckInDay && isCheckOutDay) {
-      return hour >= checkInHour && hour < checkOutHour ? 'bg-emerald-200/50' : '';
-    }
-
-    if (isCheckInDay) {
-      return hour >= checkInHour ? 'bg-emerald-200/50' : '';
-    }
-
-    if (isMiddleDay) {
-      return 'bg-emerald-200/50';
-    }
-
-    if (isCheckOutDay) {
-      return hour < checkOutHour ? 'bg-emerald-200/50' : '';
-    }
-
-    return '';
-  };
-
-  const accomHours = isWithinStay && accommodation ?
-    (isCheckInDay ?
-      getHourRange(accommodation.checkInTime || "00:00", "23:59") :
-      isCheckOutDay ?
-        getHourRange("00:00", accommodation.checkOutTime || "23:59") :
-        getHourRange("00:00", "23:59")
-    ) : [];
-
-  const transHours = transportation ? (
-    Array.isArray(transportation) ?
-      transportation.flatMap(transport => transport.departureTime && transport.arrivalTime ? getHourRange(transport.departureTime, transport.arrivalTime) : []) :
-      transportation.type === 'continuous' ?
-        getHourRange("00:00", "23:59") :
-        transportation.departureTime && transportation.arrivalTime ?
-          getHourRange(transportation.departureTime, transportation.arrivalTime) :
-          []
-  ) : [];
-
-  const activityHours = activities ? activities.flatMap(activity =>
-    getHourRange(activity.time, activity.duration)
-  ) : [];
 
   return (
     <motion.div
@@ -825,22 +763,14 @@ export default function TravelDayCard({
       className={containerClasses}
     >
       <Card className="h-full">
-        <div className="relative h-48 overflow-hidden rounded-t-lg">
-          <img
-            src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${
-              accommodation?.coordinates
-                ? `${accommodation.coordinates.lng},${accommodation.coordinates.lat},12,0`
-                : '0,0,2,0'
-            }/600x300@2x?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}`}
-            alt={`Map of day ${day}`}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/90">
-            <div className="absolute bottom-4 left-4">
-              <h3 className="text-xl font-semibold text-black">
-                {formatDayHeader(startDate, day)}
-              </h3>
-            </div>
+        <div className="relative p-4 bg-gradient-to-b from-blue-50 to-white border-b">
+          <div className="space-y-1">
+            <h3 className="text-lg font-semibold">
+              {formatDayHeader(startDate, day)}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {getCurrentLocation()}
+            </p>
           </div>
         </div>
 
@@ -1029,8 +959,7 @@ export default function TravelDayCard({
                           </div>
                           {activity.description && (
                             <p className="text-sm text-gray-500 mt-1">{activity.description}</p>
-                          )}
-                        </div>
+                          )}                        </div>
                         {onAddActivity && (
                           <Button
                             variant="ghost"
