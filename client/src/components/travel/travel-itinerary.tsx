@@ -7,6 +7,60 @@ import { JourneyMap } from "./journey-map";
 import { generateICS } from "@/lib/ics-generator";
 import { useToast } from "@/hooks/use-toast";
 
+interface ActivityItem {
+  time: string;
+  duration?: string;
+  title: string;
+  location?: {
+    lat: number;
+    lng: number;
+  };
+  category?: string;
+  description?: string;
+}
+
+interface AccommodationDetails {
+  title: string;
+  details: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+  price_range?: string;
+  booking_url?: string;
+  checkInTime?: string;
+  checkOutTime?: string;
+  startDay?: number;
+  endDay?: number;
+}
+
+interface TransportationDetails {
+  title: string;
+  details: string;
+  type?: 'continuous' | 'scheduled';
+  transportMode?: string;
+  flightNumber?: string;
+  departureTime?: string;
+  arrivalTime?: string;
+  route?: {
+    from: {
+      lat: number;
+      lng: number;
+    };
+    to: {
+      lat: number;
+      lng: number;
+    };
+  };
+}
+
+interface DayPlan {
+  day: number;
+  accommodation?: AccommodationDetails;
+  transportation?: TransportationDetails;
+  activities: ActivityItem[];
+}
+
 export default function TravelItinerary({ itinerary }) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
@@ -15,9 +69,7 @@ export default function TravelItinerary({ itinerary }) {
   });
 
   const { toast } = useToast();
-  const [currentItinerary, setCurrentItinerary] = useState(itinerary ?? []);
-  console.log("Initial itinerary:", itinerary);
-  console.log("Current Itinerary State:", currentItinerary);
+  const [currentItinerary, setCurrentItinerary] = useState<DayPlan[]>(itinerary ?? []);
   const startDate = new Date();
   const [viewMode, setViewMode] = useState("cards");
 
@@ -29,11 +81,62 @@ export default function TravelItinerary({ itinerary }) {
     emblaApi?.scrollNext();
   }, [emblaApi]);
 
+  // Edit handlers
+  const handleEditAccommodation = (dayIndex: number, updatedAccommodation: AccommodationDetails) => {
+    setCurrentItinerary(prev => {
+      const newItinerary = [...prev];
+      newItinerary[dayIndex] = {
+        ...newItinerary[dayIndex],
+        accommodation: updatedAccommodation
+      };
+      return newItinerary;
+    });
+    toast({ title: "Success", description: "Accommodation updated successfully" });
+  };
+
+  const handleEditTransportation = (dayIndex: number, updatedTransportation: TransportationDetails) => {
+    setCurrentItinerary(prev => {
+      const newItinerary = [...prev];
+      newItinerary[dayIndex] = {
+        ...newItinerary[dayIndex],
+        transportation: updatedTransportation
+      };
+      return newItinerary;
+    });
+    toast({ title: "Success", description: "Transportation updated successfully" });
+  };
+
+  const handleEditActivity = (dayIndex: number, activityIndex: number, updatedActivity: ActivityItem) => {
+    setCurrentItinerary(prev => {
+      const newItinerary = [...prev];
+      newItinerary[dayIndex].activities[activityIndex] = updatedActivity;
+      return newItinerary;
+    });
+    toast({ title: "Success", description: "Activity updated successfully" });
+  };
+
+  const handleRemoveActivity = (dayIndex: number, activityIndex: number) => {
+    setCurrentItinerary(prev => {
+      const newItinerary = [...prev];
+      newItinerary[dayIndex].activities = newItinerary[dayIndex].activities.filter((_, i) => i !== activityIndex);
+      return newItinerary;
+    });
+    toast({ title: "Success", description: "Activity removed successfully" });
+  };
+
+  const handleAddActivity = (dayIndex: number, newActivity: ActivityItem) => {
+    setCurrentItinerary(prev => {
+      const newItinerary = [...prev];
+      newItinerary[dayIndex].activities.push(newActivity);
+      return newItinerary;
+    });
+    toast({ title: "Success", description: "Activity added successfully" });
+  };
+
   // Extract all locations for the map
-  const mapLocations = (currentItinerary ?? []).flatMap(day => {
+  const mapLocations = currentItinerary.flatMap(day => {
     const locations = [];
 
-    // Add accommodation coordinates
     if (day.accommodation?.coordinates) {
       locations.push({
         title: day.accommodation.title,
@@ -43,7 +146,6 @@ export default function TravelItinerary({ itinerary }) {
       });
     }
 
-    // Add transportation route points safely
     if (day.transportation?.route) {
       locations.push({
         title: `${day.transportation.title} (Departure)`,
@@ -57,16 +159,8 @@ export default function TravelItinerary({ itinerary }) {
         type: 'transportation',
         day: day.day
       });
-    } else {
-      locations.push({
-        title: `Ruhetag - Kein Transport nötig`,
-        coordinates: { lat: 0, lng: 0 },
-        type: 'none',
-        day: day.day
-      });
     }
 
-    // Add activity locations
     day.activities.forEach(activity => {
       if (activity.location) {
         locations.push({
@@ -104,7 +198,15 @@ export default function TravelItinerary({ itinerary }) {
             <div className="flex">
               {currentItinerary.map((day, index) => (
                 <div key={day.day} className="flex-[0_0_33.333%] min-w-[300px]">
-                  <TravelDayCard {...day} startDate={startDate} />
+                  <TravelDayCard
+                    {...day}
+                    startDate={startDate}
+                    onEditAccommodation={(updatedAccommodation) => handleEditAccommodation(index, updatedAccommodation)}
+                    onEditTransportation={(updatedTransportation) => handleEditTransportation(index, updatedTransportation)}
+                    onEditActivity={(activityIndex, updatedActivity) => handleEditActivity(index, activityIndex, updatedActivity)}
+                    onRemoveActivity={(activityIndex) => handleRemoveActivity(index, activityIndex)}
+                    onAddActivity={(newActivity) => handleAddActivity(index, newActivity)}
+                  />
                 </div>
               ))}
             </div>
