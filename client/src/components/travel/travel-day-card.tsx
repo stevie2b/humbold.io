@@ -536,7 +536,7 @@ export default function TravelDayCard({
         getHourRange("00:00", "23:59")
     ) : [];
 
-  const transHours = transportation.type === 'continuous' ?
+  const transHours = transportation?.type === 'continuous' ?
     getHourRange("00:00", "23:59") :
     transportation.departureTime && transportation.arrivalTime ?
       getHourRange(transportation.departureTime, transportation.arrivalTime) :
