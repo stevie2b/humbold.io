@@ -17,46 +17,20 @@ const exampleDestinations: Destination[] = [
 
 const itineraries = {
   Paris: [
-    {
-      day: 1,
-      accommodation: { title: "Hotel Paris Centre", details: "Zentral gelegen", checkInTime: "14:00", checkOutTime: "12:00", startDay: 1, endDay: 3, coordinates: { lat: 48.8566, lng: 2.3522 } },
-      activities: [
-        { time: "14:00", title: "Eiffelturm", duration: "2h", location: { lat: 48.8584, lng: 2.2945 } },
-        { time: "17:00", title: "Louvre", duration: "3h", location: { lat: 48.8606, lng: 2.3376 } },
-      ],
-    },
-    {
-      day: 2,
-      activities: [
-        { time: "10:00", title: "Notre Dame", duration: "2h", location: { lat: 48.853, lng: 2.3499 } },
-        { time: "14:00", title: "Seine-Bootstour", duration: "1.5h", location: { lat: 48.8595, lng: 2.3266 } },
-      ],
-    },
-    {
-      day: 3,
-      activities: [
-        { time: "09:00", title: "Sacré-Cœur", duration: "1.5h", location: { lat: 48.8867, lng: 2.3431 } },
-        { time: "12:00", title: "Champs-Élysées", duration: "2h", location: { lat: 48.8698, lng: 2.3073 } },
-      ],
-    },
+    { day: 1, accommodation: { title: "Hotel Paris Centre", details: "Zentral gelegen", coordinates: { lat: 48.8566, lng: 2.3522 } }, transportation: { type: "scheduled", title: "Flug nach Paris", details: "Direktflug von Berlin", route: { from: { lat: 52.5200, lng: 13.4050 }, to: { lat: 48.8566, lng: 2.3522 } } }, activities: [{ time: "14:00", title: "Eiffelturm", duration: "2h", location: { lat: 48.8584, lng: 2.2945 } }] },
+    { day: 2, activities: [{ time: "10:00", title: "Louvre Museum", duration: "3h", location: { lat: 48.8606, lng: 2.3376 } }] },
+    { day: 3, activities: [{ time: "09:00", title: "Sacré-Cœur", duration: "1.5h", location: { lat: 48.8867, lng: 2.3431 } }] }
   ],
-  Tokyo: [
-    {
-      day: 1,
-      accommodation: { title: "Tokyo Tower Hotel", details: "Nähe Shinjuku", checkInTime: "15:00", checkOutTime: "11:00", startDay: 1, endDay: 7, coordinates: { lat: 35.6895, lng: 139.6917 } },
-      activities: [{ time: "16:00", title: "Shibuya Crossing", duration: "1h", location: { lat: 35.6595, lng: 139.7005 } }],
-    },
-    { day: 2, activities: [{ time: "10:00", title: "Senso-ji Tempel", duration: "2h", location: { lat: 35.7148, lng: 139.7967 } }] },
-    { day: 3, activities: [{ time: "11:00", title: "Ghibli Museum", duration: "3h", location: { lat: 35.6961, lng: 139.5703 } }] },
-    { day: 4, transportation: { type: "scheduled", title: "Zug nach Kyoto", details: "Shinkansen Tokyo-Kyoto", departureTime: "08:00", arrivalTime: "11:00", route: { from: { lat: 35.6895, lng: 139.6917 }, to: { lat: 35.0116, lng: 135.7681 } } }, activities: [{ time: "12:00", title: "Fushimi Inari", duration: "2h", location: { lat: 34.9671, lng: 135.7727 } }] },
-    { day: 5, activities: [{ time: "10:00", title: "Kinkaku-ji Tempel", duration: "2h", location: { lat: 35.0394, lng: 135.7292 } }] },
-    { day: 6, transportation: { type: "scheduled", title: "Zug nach Hakone", details: "Shinkansen Kyoto-Hakone", departureTime: "10:00", arrivalTime: "13:00", route: { from: { lat: 35.0116, lng: 135.7681 }, to: { lat: 35.2325, lng: 139.1062 } } }, activities: [{ time: "15:00", title: "Hakone Onsen", duration: "3h", location: { lat: 35.2325, lng: 139.1062 } }] },
-    { day: 7, activities: [{ time: "10:00", title: "Rückkehr nach Tokyo", duration: "2h", location: { lat: 35.6895, lng: 139.6917 } }] },
-  ],
+  Tokyo: Array.from({ length: 7 }, (_, i) => ({ day: i + 1, accommodation: { title: `Hotel Tag ${i + 1}`, details: "Komfortable Unterkunft", coordinates: { lat: 35.6895, lng: 139.6917 } }, transportation: { type: "scheduled", title: `Zugreise Tag ${i + 1}`, details: "Shinkansen zu einem neuen Ziel" }, activities: [{ time: "10:00", title: `Sehenswürdigkeit Tag ${i + 1}`, duration: "5h" }] })),
+  Sydney: Array.from({ length: 10 }, (_, i) => ({ day: i + 1, accommodation: { title: `Hotel Sydney Tag ${i + 1}`, details: "Nahe am Strand", coordinates: { lat: -33.8688, lng: 151.2093 } }, transportation: { type: "scheduled", title: `Flug oder Bus Tag ${i + 1}`, details: "Reise zum nächsten Ziel" }, activities: [{ time: "10:00", title: `Erkundungstag ${i + 1}`, duration: "5h" }] })),
+  Italien: Array.from({ length: 14 }, (_, i) => ({ day: i + 1, accommodation: { title: `Hotel Italien Tag ${i + 1}`, details: "Stadthotel", coordinates: { lat: 41.9028, lng: 12.4964 } }, transportation: { type: "scheduled", title: `Zugreise durch Italien Tag ${i + 1}`, details: "Reise zwischen Städten" }, activities: [{ time: "10:00", title: `Städtetour Tag ${i + 1}`, duration: "6h" }] }))
 };
 
 const Explore = () => {
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
+
+  console.log("Selected destination:", selectedDestination);
+  console.log("Itinerary being passed:", selectedDestination ? itineraries[selectedDestination.name] : "No destination selected");
 
   return (
     <div className="container mx-auto p-4">

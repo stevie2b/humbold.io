@@ -16,14 +16,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns";
 
 // Only modifying the LocationSearch component
-function LocationSearch({ 
+function LocationSearch({
   onLocationSelect,
   initialAddress = "",
-  searchType = "" 
-}: { 
+  searchType = ""
+}: {
   onLocationSelect: (location: { lat: number; lng: number; address: string }) => void;
   initialAddress?: string;
-  searchType?: string; 
+  searchType?: string;
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -67,7 +67,7 @@ function LocationSearch({
             }
           }}
         />
-        <Button 
+        <Button
           variant="secondary"
           onClick={() => searchLocation(searchQuery)}
           disabled={isSearching}
@@ -110,12 +110,12 @@ function LocationSearch({
 }
 
 // Update ActivityEditDialog to use searchType
-function ActivityEditDialog({ 
-  activity, 
+function ActivityEditDialog({
+  activity,
   onSave,
-  trigger 
-}: { 
-  activity: ActivityItem; 
+  trigger
+}: {
+  activity: ActivityItem;
   onSave: (updatedActivity: ActivityItem) => void;
   trigger: React.ReactNode;
 }) {
@@ -145,7 +145,7 @@ function ActivityEditDialog({
             <Input
               id="duration"
               type="time"
-              value={editedActivity.duration || ''} 
+              value={editedActivity.duration || ''}
               onChange={(e) => setEditedActivity({ ...editedActivity, duration: e.target.value })}
             />
           </div>
@@ -158,15 +158,15 @@ function ActivityEditDialog({
             />
           </div>
 
-          <LocationSearch 
+          <LocationSearch
             onLocationSelect={({ lat, lng, address }) => {
               setEditedActivity({
                 ...editedActivity,
                 location: { lat, lng },
-                title: address.split(',')[0] 
+                title: address.split(',')[0]
               });
             }}
-            searchType="venue" 
+            searchType="venue"
             initialAddress={activity.title}
           />
         </div>
@@ -179,12 +179,12 @@ function ActivityEditDialog({
 }
 
 // Update AccommodationEditDialog to include LocationSearch
-function AccommodationEditDialog({ 
-  accommodation, 
+function AccommodationEditDialog({
+  accommodation,
   onSave,
-  trigger 
-}: { 
-  accommodation: AccommodationDetails; 
+  trigger
+}: {
+  accommodation: AccommodationDetails;
   onSave: (updatedAccommodation: AccommodationDetails) => void;
   trigger: React.ReactNode;
 }) {
@@ -217,7 +217,7 @@ function AccommodationEditDialog({
             />
           </div>
 
-          <LocationSearch 
+          <LocationSearch
             onLocationSelect={({ lat, lng }) => {
               setEdited({
                 ...edited,
@@ -275,12 +275,12 @@ function AccommodationEditDialog({
   );
 }
 
-function TransportationEditDialog({ 
-  transportation, 
+function TransportationEditDialog({
+  transportation,
   onSave,
-  trigger 
-}: { 
-  transportation: TransportationDetails; 
+  trigger
+}: {
+  transportation: TransportationDetails;
   onSave: (updatedTransportation: TransportationDetails) => void;
   trigger: React.ReactNode;
 }) {
@@ -298,10 +298,10 @@ function TransportationEditDialog({
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="type">Transportation Type</Label>
-            <Select 
+            <Select
               value={edited.type}
-              onValueChange={(value) => setEdited({ 
-                ...edited, 
+              onValueChange={(value) => setEdited({
+                ...edited,
                 type: value as 'continuous' | 'scheduled'
               })}
             >
@@ -329,7 +329,7 @@ function TransportationEditDialog({
             <>
               <div className="grid gap-2">
                 <Label htmlFor="transportMode">Transport Mode</Label>
-                <Select 
+                <Select
                   value={edited.transportMode}
                   onValueChange={(value) => setEdited({ ...edited, transportMode: value })}
                 >
@@ -390,7 +390,7 @@ function TransportationEditDialog({
             <div className="space-y-4">
               <div>
                 <Label className="mb-2">From Location</Label>
-                <LocationSearch 
+                <LocationSearch
                   onLocationSelect={({ lat, lng, address }) => {
                     setEdited({
                       ...edited,
@@ -404,7 +404,7 @@ function TransportationEditDialog({
               </div>
               <div>
                 <Label className="mb-2">To Location</Label>
-                <LocationSearch 
+                <LocationSearch
                   onLocationSelect={({ lat, lng, address }) => {
                     setEdited({
                       ...edited,
@@ -435,25 +435,29 @@ interface ActivityItem {
     lat: number;
     lng: number;
   };
+  category?: string;
+  description?: string;
 }
 
 interface AccommodationDetails {
   title: string;
   details: string;
-  checkInTime: string;
-  checkOutTime: string;
-  startDay: number;
-  endDay: number;
   coordinates?: {
     lat: number;
     lng: number;
   };
+  price_range?: string;
+  booking_url?: string;
+  checkInTime?: string;
+  checkOutTime?: string;
+  startDay?: number;
+  endDay?: number;
 }
 
 interface TransportationDetails {
-  type: 'continuous' | 'scheduled';
   title: string;
   details: string;
+  type?: 'continuous' | 'scheduled';
   transportMode?: string;
   flightNumber?: string;
   departureTime?: string;
@@ -509,10 +513,10 @@ function formatDayHeader(startDate: Date, day: number): string {
   return `${format(currentDate, 'EEE')}, ${format(currentDate, 'dd.MM')}. (day ${day})`;
 }
 
-export default function TravelDayCard({ 
-  day, 
-  accommodation, 
-  transportation, 
+export default function TravelDayCard({
+  day,
+  accommodation,
+  transportation,
   activities = [],
   onRemoveActivity,
   onAddActivity,
@@ -522,17 +526,17 @@ export default function TravelDayCard({
   recommendations = [],
   isFirstCard = false,
   isLastCard = false,
-  startDate = new Date() 
+  startDate = new Date()
 }: TravelDayCardProps) {
 
-  const isWithinStay = accommodation 
+  const isWithinStay = accommodation
     ? (day >= accommodation.startDay && day <= accommodation.endDay)
     : false;
   const isCheckInDay = accommodation ? day === accommodation.startDay : false;
   const isCheckOutDay = accommodation ? day === accommodation.endDay : false;
 
-  const accomHours = isWithinStay && accommodation ? 
-    (isCheckInDay ? 
+  const accomHours = isWithinStay && accommodation ?
+    (isCheckInDay ?
       getHourRange(accommodation.checkInTime, "23:59") :
       isCheckOutDay ?
         getHourRange("00:00", accommodation.checkOutTime) :
@@ -547,7 +551,7 @@ export default function TravelDayCard({
         []
   ) : [];
 
-  const activityHours = activities ? activities.flatMap(activity => 
+  const activityHours = activities ? activities.flatMap(activity =>
     getHourRange(activity.time, activity.duration)
   ) : [];
 
@@ -565,12 +569,12 @@ export default function TravelDayCard({
     >
       <Card className="h-full">
         <div className="relative h-48 overflow-hidden rounded-t-lg">
-          <img 
+          <img
             src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${
-              accommodation?.coordinates 
+              accommodation?.coordinates
                 ? `${accommodation.coordinates.lng},${accommodation.coordinates.lat},12,0`
                 : '0,0,2,0'
-            }/600x300@2x?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}`}
+              }/600x300@2x?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}`}
             alt={`Map of day ${day}`}
             className="w-full h-full object-cover"
           />
@@ -590,23 +594,18 @@ export default function TravelDayCard({
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-emerald-600" />
                   <h4 className="text-sm font-medium text-emerald-700">
-                    {isWithinStay ? `Stay at ${accommodation.title}` : 'No Accommodation'}
+                    Accommodation
                   </h4>
                 </div>
                 {onEditAccommodation && (
-                  <AccommodationEditDialog
-                    accommodation={accommodation}
-                    onSave={onEditAccommodation}
-                    trigger={
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    }
-                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => onEditAccommodation(accommodation)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
                 )}
               </div>
               <div className="relative bg-emerald-50 rounded-lg p-3 border border-emerald-200">
@@ -640,7 +639,7 @@ export default function TravelDayCard({
                 </div>
                 <div className="absolute inset-0 flex rounded-lg overflow-hidden">
                   {Array.from({ length: 24 }, (_, i) => (
-                    <div 
+                    <div
                       key={i}
                       className={`flex-1 ${accomHours.includes(i) ? 'bg-emerald-200/50' : ''}`}
                     />
@@ -655,19 +654,14 @@ export default function TravelDayCard({
               <div className="flex justify-between items-center mb-2">
                 <h4 className="text-sm font-medium text-amber-700">Transportation</h4>
                 {onEditTransportation && (
-                  <TransportationEditDialog
-                    transportation={transportation}
-                    onSave={onEditTransportation}
-                    trigger={
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    }
-                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => onEditTransportation(transportation)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
                 )}
               </div>
               <div className="relative bg-amber-50 rounded-lg p-3 border border-amber-200">
@@ -690,7 +684,7 @@ export default function TravelDayCard({
                 </div>
                 <div className="absolute inset-0 flex rounded-lg overflow-hidden">
                   {Array.from({ length: 24 }, (_, i) => (
-                    <div 
+                    <div
                       key={i}
                       className={`flex-1 ${transHours.includes(i) ? 'bg-amber-200/50' : ''}`}
                     />
@@ -705,8 +699,8 @@ export default function TravelDayCard({
               <h4 className="text-sm font-medium text-blue-700 mb-2">Activities</h4>
               <div className="space-y-2">
                 {activities.map((activity, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className="relative bg-blue-50 rounded-lg p-3 border border-blue-200 flex items-center justify-between"
                   >
                     <div className="relative z-10 flex-1">
@@ -722,19 +716,14 @@ export default function TravelDayCard({
                     </div>
                     <div className="relative z-10 flex items-center space-x-1">
                       {onEditActivity && (
-                        <ActivityEditDialog
-                          activity={activity}
-                          onSave={(updatedActivity) => onEditActivity(index, updatedActivity)}
-                          trigger={
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          }
-                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => onEditActivity(index, activity)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                       )}
                       {onRemoveActivity && (
                         <Button
@@ -751,7 +740,7 @@ export default function TravelDayCard({
                       {Array.from({ length: 24 }, (_, i) => {
                         const hours = getHourRange(activity.time, activity.duration);
                         return (
-                          <div 
+                          <div
                             key={i}
                             className={`flex-1 ${hours.includes(i) ? 'bg-blue-200/50' : ''}`}
                           />
@@ -769,7 +758,7 @@ export default function TravelDayCard({
               <h4 className="text-sm font-medium text-gray-700 mb-2">Recommended Activities</h4>
               <div className="space-y-2">
                 {recommendations.map((activity, index) => (
-                  <div 
+                  <div
                     key={index}
                     className="relative bg-gray-50 rounded-lg p-3 border border-gray-200 flex items-center justify-between"
                   >
@@ -798,7 +787,7 @@ export default function TravelDayCard({
                       {Array.from({ length: 24 }, (_, i) => {
                         const hours = getHourRange(activity.time, activity.duration);
                         return (
-                          <div 
+                          <div
                             key={i}
                             className={`flex-1 ${hours.includes(i) ? 'bg-gray-200/50' : ''}`}
                           />

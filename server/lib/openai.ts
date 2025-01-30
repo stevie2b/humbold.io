@@ -55,139 +55,120 @@ export async function generateTravelPlan(preferences: {
 }): Promise<TravelPlan> {
   try {
     if (!process.env.OPENAI_API_KEY) {
-      console.log("OpenAI API key not found, using fallback");
-      return generateBasicItinerary(preferences);
+      throw new Error("OpenAI API key is not configured");
     }
 
-    const prompt = `Generate a detailed ${preferences.numberOfDays}-day travel itinerary based on these preferences:
-      Season: ${preferences.season}
-      ${preferences.specificDate ? `Specific Date: ${preferences.specificDate}` : ''}
-      Destination: ${preferences.destination}
-      Traveler Type: ${preferences.travelerType}
-      Activities: ${preferences.activities.join(', ')}
-      Number of Days: ${preferences.numberOfDays}
-      ${preferences.coordinates ? `Location Coordinates: ${JSON.stringify(preferences.coordinates)}` : ''}
+    console.log("Generating travel plan with preferences:", preferences);
 
-      IMPORTANT REQUIREMENTS:
-      1. The itinerary MUST be exactly ${preferences.numberOfDays} days long
-      2. Each activity MUST have a start time and duration
-      3. Include realistic coordinate data for mapping
-      4. Add booking URLs for accommodations where applicable
-      5. Categorize activities for better organization
-      6. Include price ranges for accommodations ($ to $$$$$)
-      7. Add detailed descriptions for activities
-      8. Consider local transportation options and walking distances
-      9. Account for opening hours and seasonal availability
-      10. Include local cultural experiences and hidden gems
+    const prompt = `Generate a detailed ${preferences.numberOfDays}-day travel itinerary for ${preferences.destination}.
 
-      Please provide the response in this JSON format:
-      {
-        "itinerary": [
-          {
-            "day": 1,
-            "accommodation": {
-              "title": "Hotel name",
-              "details": "Details about the accommodation",
-              "coordinates": {"lat": number, "lng": number},
-              "price_range": "$$",
-              "booking_url": "URL"
-            },
-            "transportation": {
-              "title": "Transport type",
-              "details": "Transport details",
-              "route": {
-                "from": {"lat": number, "lng": number},
-                "to": {"lat": number, "lng": number}
-              }
-            },
-            "activities": [
-              {
-                "time": "HH:MM",
-                "duration": "HH:MM",
-                "title": "Activity name",
-                "location": {"lat": number, "lng": number},
-                "category": "Activity type",
-                "description": "Detailed description"
-              }
-            ]
-          }
-        ],
-        "recommendations": ["Recommendation 1", "Recommendation 2"]
-      }`;
+    Travel Details:
+    - Number of Days: ${preferences.numberOfDays}
+    - Traveler Type: ${preferences.travelerType}
+    - Activities: ${preferences.activities.join(', ')}
+    - Season: ${preferences.season}
+    ${preferences.specificDate ? `- Specific Date: ${preferences.specificDate}` : ''}
+    ${preferences.coordinates ? `- Location: ${JSON.stringify(preferences.coordinates)}` : ''}
 
-    try {
-      console.log("Sending request to OpenAI...");
-      const response = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }],
-        response_format: { type: "json_object" },
-        temperature: 0.7,
-      });
+    Requirements:
+    1. Each day must have:
+       - Accommodation details (if changing locations)
+       - Transportation information (if traveling between locations)
+       - 2-4 activities with specific times and durations
+    2. Activities should match the selected preferences (${preferences.activities.join(', ')})
+    3. Include coordinates for all locations
+    4. Add price ranges ($ to $$$$$) for accommodations
+    5. Include detailed descriptions for activities
+    6. Consider ${preferences.travelerType} specific needs
+    7. Account for seasonal activities (${preferences.season})
 
-      if (!response.choices[0].message.content) {
-        console.log("No OpenAI response content, using fallback");
-        return generateBasicItinerary(preferences);
-      }
-
-      const result = JSON.parse(response.choices[0].message.content) as TravelPlan;
-
-      if (result.itinerary.length !== preferences.numberOfDays) {
-        console.log(`Incorrect number of days in response (${result.itinerary.length}), adjusting to ${preferences.numberOfDays}`);
-        while (result.itinerary.length < preferences.numberOfDays) {
-          const lastDay = result.itinerary[result.itinerary.length - 1];
-          const day = result.itinerary.length + 1;
-          result.itinerary.push({
-            day,
-            accommodation: lastDay.accommodation,
-            transportation: {
-              title: "Local Transport",
-              details: "Local transit and walking",
-              route: preferences.coordinates ? {
-                from: preferences.coordinates,
-                to: preferences.coordinates
-              } : undefined
-            },
-            activities: [
-              {
-                time: "10:00",
-                duration: "2:00",
-                title: `Day ${day} Exploration`,
-                location: preferences.coordinates,
-                category: "Exploration",
-                description: `Discover more hidden gems of ${preferences.destination}`
-              },
-              {
-                time: "14:00",
-                duration: "2:00",
-                title: "Local Experience",
-                category: "Culture",
-                description: "Immerse yourself in local culture and traditions"
-              },
-              {
-                time: "16:00",
-                duration: "2:00",
-                title: "Evening Activities",
-                location: preferences.coordinates,
-                category: "Entertainment",
-                description: "Enjoy local entertainment and nightlife"
-              }
-            ]
-          });
+    Provide the response in this exact JSON format:
+    {
+      "itinerary": [
+        {
+          "day": 1,
+          "accommodation": {
+            "title": "Hotel name",
+            "details": "Description",
+            "coordinates": {"lat": number, "lng": number},
+            "price_range": "$$",
+            "booking_url": "URL"
+          },
+          "transportation": {
+            "title": "Transport mode",
+            "details": "Details",
+            "route": {
+              "from": {"lat": number, "lng": number},
+              "to": {"lat": number, "lng": number}
+            }
+          },
+          "activities": [
+            {
+              "time": "09:00",
+              "duration": "2:00",
+              "title": "Activity name",
+              "location": {"lat": number, "lng": number},
+              "category": "Type",
+              "description": "Details"
+            }
+          ]
         }
+      ],
+      "recommendations": ["Tip 1", "Tip 2"]
+    }`;
 
-        if (result.itinerary.length > preferences.numberOfDays) {
-          result.itinerary = result.itinerary.slice(0, preferences.numberOfDays);
-        }
-      }
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      temperature: 0.7,
+    });
 
-      return result;
-    } catch (apiError: any) {
-      console.error("OpenAI API error:", apiError);
-      return generateBasicItinerary(preferences);
+    if (!response.choices[0].message.content) {
+      throw new Error("No response from OpenAI");
     }
+
+    const result = JSON.parse(response.choices[0].message.content) as TravelPlan;
+
+    // Validate and fix the number of days if needed
+    if (result.itinerary.length !== preferences.numberOfDays) {
+      console.log(`Adjusting itinerary length from ${result.itinerary.length} to ${preferences.numberOfDays} days`);
+
+      while (result.itinerary.length < preferences.numberOfDays) {
+        const lastDay = result.itinerary[result.itinerary.length - 1];
+        result.itinerary.push({
+          day: result.itinerary.length + 1,
+          accommodation: lastDay.accommodation,
+          transportation: {
+            title: "Local Transport",
+            details: "Local transit options and walking",
+            route: preferences.coordinates ? {
+              from: preferences.coordinates,
+              to: preferences.coordinates
+            } : undefined
+          },
+          activities: [
+            {
+              time: "10:00",
+              duration: "2:00",
+              title: `Local Exploration`,
+              location: preferences.coordinates,
+              category: preferences.activities[0],
+              description: `Explore local attractions and activities in ${preferences.destination}`
+            }
+          ]
+        });
+      }
+
+      if (result.itinerary.length > preferences.numberOfDays) {
+        result.itinerary = result.itinerary.slice(0, preferences.numberOfDays);
+      }
+    }
+
+    return result;
   } catch (error: any) {
     console.error("Error generating travel plan:", error);
-    return generateBasicItinerary(preferences);
+    throw error;
   }
 }
 

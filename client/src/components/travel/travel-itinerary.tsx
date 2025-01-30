@@ -15,7 +15,9 @@ export default function TravelItinerary({ itinerary }) {
   });
 
   const { toast } = useToast();
-  const [currentItinerary, setCurrentItinerary] = useState(itinerary);
+  const [currentItinerary, setCurrentItinerary] = useState(itinerary ?? []);
+  console.log("Initial itinerary:", itinerary);
+  console.log("Current Itinerary State:", currentItinerary);
   const startDate = new Date();
   const [viewMode, setViewMode] = useState("cards");
 
@@ -28,7 +30,7 @@ export default function TravelItinerary({ itinerary }) {
   }, [emblaApi]);
 
   // Extract all locations for the map
-  const mapLocations = currentItinerary.flatMap(day => {
+  const mapLocations = (currentItinerary ?? []).flatMap(day => {
     const locations = [];
 
     // Add accommodation coordinates
@@ -53,6 +55,13 @@ export default function TravelItinerary({ itinerary }) {
         title: `${day.transportation.title} (Arrival)`,
         coordinates: day.transportation.route.to,
         type: 'transportation',
+        day: day.day
+      });
+    } else {
+      locations.push({
+        title: `Ruhetag - Kein Transport nötig`,
+        coordinates: { lat: 0, lng: 0 },
+        type: 'none',
         day: day.day
       });
     }
