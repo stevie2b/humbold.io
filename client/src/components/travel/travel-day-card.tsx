@@ -506,7 +506,6 @@ function getHourRange(startTime: string, endTime?: string): number[] {
   return hours;
 }
 
-
 function formatDayHeader(startDate: Date, day: number): string {
   const currentDate = new Date(startDate);
   currentDate.setDate(currentDate.getDate() + day - 1);
@@ -598,14 +597,19 @@ export default function TravelDayCard({
                   </h4>
                 </div>
                 {onEditAccommodation && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={() => onEditAccommodation(accommodation)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
+                  <AccommodationEditDialog
+                    accommodation={accommodation}
+                    onSave={onEditAccommodation}
+                    trigger={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
                 )}
               </div>
               <div className="relative bg-emerald-50 rounded-lg p-3 border border-emerald-200">
@@ -654,14 +658,19 @@ export default function TravelDayCard({
               <div className="flex justify-between items-center mb-2">
                 <h4 className="text-sm font-medium text-amber-700">Transportation</h4>
                 {onEditTransportation && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={() => onEditTransportation(transportation)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
+                  <TransportationEditDialog
+                    transportation={transportation}
+                    onSave={onEditTransportation}
+                    trigger={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
                 )}
               </div>
               <div className="relative bg-amber-50 rounded-lg p-3 border border-amber-200">
@@ -716,14 +725,19 @@ export default function TravelDayCard({
                     </div>
                     <div className="relative z-10 flex items-center space-x-1">
                       {onEditActivity && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          onClick={() => onEditActivity(index, activity)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+                        <ActivityEditDialog
+                          activity={activity}
+                          onSave={(updatedActivity) => onEditActivity(index, updatedActivity)}
+                          trigger={
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          }
+                        />
                       )}
                       {onRemoveActivity && (
                         <Button
