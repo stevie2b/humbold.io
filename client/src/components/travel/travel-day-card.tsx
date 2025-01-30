@@ -733,26 +733,12 @@ export default function TravelDayCard({
     return `${format(currentDate, 'EEE')}, ${format(currentDate, 'dd.MM')}. (day ${dayNum})`;
   };
 
-  // Extract city information from accommodation and transportation
+  // Extract city information from accommodation
   const getCurrentLocation = () => {
-    if (!accommodation && !transportation) return "";
+    if (!accommodation) return "";
 
-    // If there's transportation, show transition
-    if (transportation) {
-      const trans = Array.isArray(transportation) ? transportation[0] : transportation;
-      if (trans.route?.from && trans.route?.to) {
-        const fromCity = trans.title.split(' to ')[0];
-        const toCity = trans.title.split(' to ')[1];
-        return `${fromCity} → ${toCity}`;
-      }
-    }
-
-    // Otherwise show current accommodation city
-    if (accommodation) {
-      return accommodation.title.split(',')[0];
-    }
-
-    return "";
+    const city = accommodation.title.split(',')[0];
+    return city;
   };
 
   return (
@@ -977,7 +963,7 @@ export default function TravelDayCard({
                       </div>
                     );
                   }
-                  return null;
+                                    return null;
                 })}
               </div>
             </div>
