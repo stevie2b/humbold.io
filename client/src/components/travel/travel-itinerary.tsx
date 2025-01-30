@@ -87,12 +87,33 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
     setCurrentItinerary(prev => {
       const newItinerary = [...prev];
 
-      // Apply accommodation to all days in the stay duration
+      // First, remove any existing accommodation for the current stay
+      const currentAccommodation = newItinerary[dayIndex].accommodation;
+      if (currentAccommodation?.startDay && currentAccommodation?.endDay) {
+        for (let i = currentAccommodation.startDay; i <= currentAccommodation.endDay; i++) {
+          const idx = i - 1;
+          if (idx < newItinerary.length && newItinerary[idx].accommodation?.title === currentAccommodation.title) {
+            delete newItinerary[idx].accommodation;
+          }
+        }
+      }
+
+      // Then apply the updated accommodation to all days in the new stay duration
       for (let i = updatedAccommodation.startDay; i <= updatedAccommodation.endDay; i++) {
-        const dayIdx = i - 1;
-        if (dayIdx < newItinerary.length) {
-          newItinerary[dayIdx] = {
-            ...newItinerary[dayIdx],
+        const idx = i - 1;
+        if (idx < newItinerary.length) {
+          // Check if there's an existing different accommodation in this period
+          const existingAccommodation = newItinerary[idx].accommodation;
+          if (existingAccommodation && existingAccommodation.title !== updatedAccommodation.title) {
+            toast({
+              title: "Warning",
+              description: `Day ${i} already has a different accommodation. Please adjust the dates to avoid overlap.`,
+              variant: "destructive"
+            });
+            return prev;
+          }
+          newItinerary[idx] = {
+            ...newItinerary[idx],
             accommodation: updatedAccommodation
           };
         }

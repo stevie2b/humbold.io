@@ -681,12 +681,29 @@ export default function TravelDayCard({
   const isMiddleDay = isWithinStay && !isCheckInDay && !isCheckOutDay;
 
   const getAccommodationColorClass = (hour: number): string => {
-    if (!isWithinStay || !accommodation) return '';
+    if (!accommodation) return '';
+
+    const isWithinStay = accommodation.startDay && accommodation.endDay && 
+      day >= accommodation.startDay && day <= accommodation.endDay;
+
+    if (!isWithinStay) return '';
+
+    const isCheckInDay = day === accommodation.startDay;
+    const isCheckOutDay = day === accommodation.endDay;
+    const isMiddleDay = isWithinStay && !isCheckInDay && !isCheckOutDay;
+
+    const checkInHour = accommodation.checkInTime
+      ? parseInt(accommodation.checkInTime.split(':')[0])
+      : 14;
+    const checkOutHour = accommodation.checkOutTime
+      ? parseInt(accommodation.checkOutTime.split(':')[0])
+      : 11;
+
+    if (isCheckInDay && isCheckOutDay) {
+      return hour >= checkInHour && hour < checkOutHour ? 'bg-emerald-200/50' : '';
+    }
 
     if (isCheckInDay) {
-      const checkInHour = accommodation.checkInTime
-        ? parseInt(accommodation.checkInTime.split(':')[0])
-        : 14;
       return hour >= checkInHour ? 'bg-emerald-200/50' : '';
     }
 
@@ -695,9 +712,6 @@ export default function TravelDayCard({
     }
 
     if (isCheckOutDay) {
-      const checkOutHour = accommodation.checkOutTime
-        ? parseInt(accommodation.checkOutTime.split(':')[0])
-        : 11;
       return hour < checkOutHour ? 'bg-emerald-200/50' : '';
     }
 
@@ -783,19 +797,19 @@ export default function TravelDayCard({
                   <div className="text-emerald-700 font-medium mb-1">{accommodation.title}</div>
                   <div className="text-sm text-emerald-600">
                     {accommodation.details}
-                    {isCheckInDay && accommodation.checkInTime && (
+                    {day === accommodation.startDay && accommodation.checkInTime && (
                       <div className="mt-1">
                         <span className="font-medium">Check-in:</span> {accommodation.checkInTime}
                       </div>
                     )}
-                    {isMiddleDay && (
-                      <div className="mt-1">
-                        <span className="italic">Continued stay</span>
-                      </div>
-                    )}
-                    {isCheckOutDay && accommodation.checkOutTime && (
+                    {day === accommodation.endDay && accommodation.checkOutTime && (
                       <div className="mt-1">
                         <span className="font-medium">Check-out:</span> {accommodation.checkOutTime}
+                      </div>
+                    )}
+                    {day > accommodation.startDay && day < accommodation.endDay && (
+                      <div className="mt-1">
+                        <span className="italic">Continued stay</span>
                       </div>
                     )}
                   </div>
