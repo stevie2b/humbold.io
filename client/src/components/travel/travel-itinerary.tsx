@@ -75,7 +75,21 @@ export default function TravelItinerary({ itinerary }) {
 
   // Generate recommended activities for each day
   const generateRecommendations = (day: DayPlan): ActivityItem[] => {
-    const baseTime = "10:00"; // Default time for recommendations
+    // Find the last scheduled activity time
+    const lastActivityTime = day.activities.length > 0 
+      ? day.activities.reduce((latest, activity) => {
+          const [hours, minutes] = activity.time.split(':').map(Number);
+          const [durationHours = 0, durationMinutes = 0] = (activity.duration || '00:00').split(':').map(Number);
+          const endTime = hours * 60 + minutes + durationHours * 60 + durationMinutes;
+          return Math.max(latest, endTime);
+        }, 0)
+      : 14 * 60; // Default to 2 PM if no activities
+
+    // Convert minutes back to HH:mm format
+    const baseHours = Math.floor(lastActivityTime / 60);
+    const baseMinutes = lastActivityTime % 60;
+    const baseTime = `${baseHours.toString().padStart(2, '0')}:${baseMinutes.toString().padStart(2, '0')}`;
+
     return [
       {
         time: baseTime,
@@ -154,10 +168,23 @@ export default function TravelItinerary({ itinerary }) {
   const handleAddActivity = (dayIndex: number, newActivity: ActivityItem) => {
     setCurrentItinerary(prev => {
       const newItinerary = [...prev];
-      newItinerary[dayIndex].activities.push(newActivity);
+      // Check if activity already exists to prevent duplicates
+      const exists = newItinerary[dayIndex].activities.some(
+        activity => activity.title === newActivity.title
+      );
+
+      if (!exists) {
+        newItinerary[dayIndex].activities.push(newActivity);
+        toast({ title: "Success", description: "Activity added successfully" });
+      } else {
+        toast({ 
+          title: "Info", 
+          description: "This activity is already in your itinerary",
+          variant: "default"
+        });
+      }
       return newItinerary;
     });
-    toast({ title: "Success", description: "Activity added successfully" });
   };
 
   // Extract all locations for the map

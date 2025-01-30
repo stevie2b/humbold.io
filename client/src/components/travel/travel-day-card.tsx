@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
+import React from 'react';
 
 // Only modifying the LocationSearch component
 function LocationSearch({
@@ -120,6 +121,27 @@ function ActivityEditDialog({
   trigger: React.ReactNode;
 }) {
   const [editedActivity, setEditedActivity] = useState(activity);
+  const [timeError, setTimeError] = useState('');
+
+  const validateTimes = (startTime: string, duration: string) => {
+    if (!duration) return true;
+
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const [durationHour, durationMinute] = duration.split(':').map(Number);
+
+    const startMinutes = startHour * 60 + startMinute;
+    const endMinutes = startMinutes + durationHour * 60 + durationMinute;
+
+    return endMinutes > startMinutes;
+  };
+
+  const handleSave = () => {
+    if (!validateTimes(editedActivity.time, editedActivity.duration || '')) {
+      setTimeError('End time must be after start time');
+      return;
+    }
+    onSave(editedActivity);
+  };
 
   return (
     <Dialog>
@@ -132,30 +154,39 @@ function ActivityEditDialog({
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="time">Time</Label>
-            <Input
-              id="time"
-              type="time"
-              value={editedActivity.time}
-              onChange={(e) => setEditedActivity({ ...editedActivity, time: e.target.value })}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="duration">Duration</Label>
-            <Input
-              id="duration"
-              type="time"
-              value={editedActivity.duration || ''}
-              onChange={(e) => setEditedActivity({ ...editedActivity, duration: e.target.value })}
-            />
-          </div>
-          <div className="grid gap-2">
             <Label htmlFor="title">Title</Label>
             <Input
               id="title"
               value={editedActivity.title}
               onChange={(e) => setEditedActivity({ ...editedActivity, title: e.target.value })}
             />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="time">Start Time</Label>
+            <Input
+              id="time"
+              type="time"
+              value={editedActivity.time}
+              onChange={(e) => {
+                setTimeError('');
+                setEditedActivity({ ...editedActivity, time: e.target.value });
+              }}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="duration">Duration</Label>
+            <Input
+              id="duration"
+              type="time"
+              value={editedActivity.duration || ''}
+              onChange={(e) => {
+                setTimeError('');
+                setEditedActivity({ ...editedActivity, duration: e.target.value });
+              }}
+            />
+            {timeError && <p className="text-sm text-red-500">{timeError}</p>}
           </div>
 
           <LocationSearch
@@ -171,7 +202,7 @@ function ActivityEditDialog({
           />
         </div>
         <div className="flex justify-end">
-          <Button onClick={() => onSave(editedActivity)}>Save Changes</Button>
+          <Button onClick={handleSave}>Save Changes</Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -208,14 +239,6 @@ function AccommodationEditDialog({
               onChange={(e) => setEdited({ ...edited, title: e.target.value })}
             />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="details">Details</Label>
-            <Input
-              id="details"
-              value={edited.details}
-              onChange={(e) => setEdited({ ...edited, details: e.target.value })}
-            />
-          </div>
 
           <LocationSearch
             onLocationSelect={({ lat, lng }) => {
@@ -225,6 +248,15 @@ function AccommodationEditDialog({
               });
             }}
           />
+
+          <div className="grid gap-2">
+            <Label htmlFor="details">Details</Label>
+            <Input
+              id="details"
+              value={edited.details}
+              onChange={(e) => setEdited({ ...edited, details: e.target.value })}
+            />
+          </div>
 
           <div className="grid gap-2">
             <Label htmlFor="checkInTime">Check-in Time</Label>
@@ -275,6 +307,7 @@ function AccommodationEditDialog({
   );
 }
 
+// Update TransportationEditDialog to show title first
 function TransportationEditDialog({
   transportation,
   onSave,
@@ -285,6 +318,27 @@ function TransportationEditDialog({
   trigger: React.ReactNode;
 }) {
   const [edited, setEdited] = useState(transportation);
+  const [timeError, setTimeError] = useState('');
+
+  const validateTimes = (departureTime: string, arrivalTime: string) => {
+    if (!departureTime || !arrivalTime) return true;
+
+    const [depHour, depMinute] = departureTime.split(':').map(Number);
+    const [arrHour, arrMinute] = arrivalTime.split(':').map(Number);
+
+    const depMinutes = depHour * 60 + depMinute;
+    const arrMinutes = arrHour * 60 + arrMinute;
+
+    return arrMinutes > depMinutes;
+  };
+
+  const handleSave = () => {
+    if (edited.type === 'scheduled' && !validateTimes(edited.departureTime || '', edited.arrivalTime || '')) {
+      setTimeError('Arrival time must be after departure time');
+      return;
+    }
+    onSave(edited);
+  };
 
   return (
     <Dialog>
@@ -296,6 +350,16 @@ function TransportationEditDialog({
           <DialogTitle>Edit Transportation</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              value={edited.title}
+              onChange={(e) => setEdited({ ...edited, title: e.target.value })}
+              placeholder={edited.type === 'scheduled' ? "Flight to Paris" : "Rental Car"}
+            />
+          </div>
+
           <div className="grid gap-2">
             <Label htmlFor="type">Transportation Type</Label>
             <Select
@@ -313,16 +377,6 @@ function TransportationEditDialog({
                 <SelectItem value="scheduled">Scheduled (Flight/Train)</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              value={edited.title}
-              onChange={(e) => setEdited({ ...edited, title: e.target.value })}
-              placeholder={edited.type === 'scheduled' ? "Flight to Paris" : "Rental Car"}
-            />
           </div>
 
           {edited.type === 'scheduled' && (
@@ -360,7 +414,10 @@ function TransportationEditDialog({
                   id="departureTime"
                   type="time"
                   value={edited.departureTime}
-                  onChange={(e) => setEdited({ ...edited, departureTime: e.target.value })}
+                  onChange={(e) => {
+                    setTimeError('');
+                    setEdited({ ...edited, departureTime: e.target.value });
+                  }}
                 />
               </div>
 
@@ -370,8 +427,12 @@ function TransportationEditDialog({
                   id="arrivalTime"
                   type="time"
                   value={edited.arrivalTime}
-                  onChange={(e) => setEdited({ ...edited, arrivalTime: e.target.value })}
+                  onChange={(e) => {
+                    setTimeError('');
+                    setEdited({ ...edited, arrivalTime: e.target.value });
+                  }}
                 />
+                {timeError && <p className="text-sm text-red-500">{timeError}</p>}
               </div>
             </>
           )}
@@ -420,7 +481,7 @@ function TransportationEditDialog({
           </div>
         </div>
         <div className="flex justify-end">
-          <Button onClick={() => onSave(edited)}>Save Changes</Button>
+          <Button onClick={handleSave}>Save Changes</Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -771,45 +832,40 @@ export default function TravelDayCard({
             <div>
               <h4 className="text-sm font-medium text-gray-700 mb-2">Recommended Activities</h4>
               <div className="space-y-2">
-                {recommendations.map((activity, index) => (
-                  <div
-                    key={index}
-                    className="relative bg-gray-50 rounded-lg p-3 border border-gray-200 flex items-center justify-between"
-                  >
-                    <div className="relative z-10 flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-gray-600 font-medium">
-                          {activity.time}
-                          {activity.duration && ` - ${activity.duration}`}
-                        </span>
-                        <span className="text-gray-700">
-                          {activity.title}
-                        </span>
+                {recommendations.map((activity, index) => {
+                  // Set a more reasonable time for the activity based on existing activities
+                  const suggestedTime = "14:00"; // Default to 2 PM
+                  const suggestedDuration = "02:00"; // 2 hours duration
+
+                  return (
+                    <div
+                      key={index}
+                      className="relative bg-gray-50 rounded-lg p-3 border border-gray-200 flex items-center justify-between"
+                    >
+                      <div className="relative z-10 flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-gray-700">
+                            {activity.title}
+                          </span>
+                        </div>
                       </div>
+                      {onAddActivity && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="relative z-10 h-8 w-8 p-0"
+                          onClick={() => onAddActivity({
+                            ...activity,
+                            time: suggestedTime,
+                            duration: suggestedDuration
+                          })}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
-                    {onAddActivity && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="relative z-10 h-8 w-8 p-0"
-                        onClick={() => onAddActivity(activity)}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <div className="absolute inset-0 flex rounded-lg overflow-hidden">
-                      {Array.from({ length: 24 }, (_, i) => {
-                        const hours = getHourRange(activity.time, activity.duration);
-                        return (
-                          <div
-                            key={i}
-                            className={`flex-1 ${hours.includes(i) ? 'bg-gray-200/50' : ''}`}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
