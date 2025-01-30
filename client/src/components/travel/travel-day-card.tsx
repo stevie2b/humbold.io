@@ -16,6 +16,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns";
 import React from 'react';
 
+// First define the utility functions
+const calculateEndTime = (startTime: string, duration: string): string => {
+  const [startHour, startMinute] = startTime.split(':').map(Number);
+  const [durationHour, durationMinute] = duration.split(':').map(Number);
+
+  const totalMinutes = startHour * 60 + startMinute + durationHour * 60 + durationMinute;
+  const endHour = Math.floor(totalMinutes / 60) % 24;
+  const endMinute = totalMinutes % 60;
+
+  return `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+};
+
+const calculateDuration = (startTime: string, endTimeStr: string): string => {
+  const [startHour, startMinute] = startTime.split(':').map(Number);
+  const [endHour, endMinute] = endTimeStr.split(':').map(Number);
+
+  let totalMinutes = (endHour * 60 + endMinute) - (startHour * 60 + startMinute);
+  if (totalMinutes < 0) totalMinutes += 24 * 60;  // Handle crossing midnight
+
+  const durationHours = Math.floor(totalMinutes / 60);
+  const durationMinutes = totalMinutes % 60;
+
+  return `${durationHours.toString().padStart(2, '0')}:${durationMinutes.toString().padStart(2, '0')}`;
+};
+
 // Only modifying the LocationSearch component
 function LocationSearch({
   onLocationSelect,
@@ -110,7 +135,6 @@ function LocationSearch({
   );
 }
 
-// Updates to ActivityEditDialog and recommendations section
 function ActivityEditDialog({
   activity,
   onSave,
@@ -123,30 +147,6 @@ function ActivityEditDialog({
   const [editedActivity, setEditedActivity] = useState(activity);
   const [timeError, setTimeError] = useState('');
   const [endTime, setEndTime] = useState(activity.duration ? calculateEndTime(activity.time, activity.duration) : '');
-
-  const calculateEndTime = (startTime: string, duration: string): string => {
-    const [startHour, startMinute] = startTime.split(':').map(Number);
-    const [durationHour, durationMinute] = duration.split(':').map(Number);
-
-    const totalMinutes = startHour * 60 + startMinute + durationHour * 60 + durationMinute;
-    const endHour = Math.floor(totalMinutes / 60) % 24;
-    const endMinute = totalMinutes % 60;
-
-    return `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
-  };
-
-  const calculateDuration = (startTime: string, endTimeStr: string): string => {
-    const [startHour, startMinute] = startTime.split(':').map(Number);
-    const [endHour, endMinute] = endTimeStr.split(':').map(Number);
-
-    let totalMinutes = (endHour * 60 + endMinute) - (startHour * 60 + startMinute);
-    if (totalMinutes < 0) totalMinutes += 24 * 60;  // Handle crossing midnight
-
-    const durationHours = Math.floor(totalMinutes / 60);
-    const durationMinutes = totalMinutes % 60;
-
-    return `${durationHours.toString().padStart(2, '0')}:${durationMinutes.toString().padStart(2, '0')}`;
-  };
 
   const validateTimes = (startTime: string, endTimeStr: string) => {
     if (!endTimeStr) return true;
@@ -241,6 +241,10 @@ function ActivityEditDialog({
     </Dialog>
   );
 }
+
+// Updates to ActivityEditDialog and recommendations section
+//function ActivityEditDialog({ ... }) { ... }
+
 
 // Update AccommodationEditDialog to include LocationSearch
 function AccommodationEditDialog({
