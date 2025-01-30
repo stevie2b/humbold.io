@@ -636,15 +636,19 @@ function AccommodationBox({
   checkOutTime,
   type,
   onEdit,
-  onRemove
+  onRemove,
+  accommodation,
+  startDate
 }: {
   title: string;
   details: string;
   checkInTime?: string;
   checkOutTime?: string;
   type: 'checkin' | 'checkout' | 'full';
-  onEdit?: () => void;
+  onEdit?: (accommodation: AccommodationDetails) => void;
   onRemove?: () => void;
+  accommodation: AccommodationDetails;
+  startDate: Date;
 }) {
   return (
     <div className="relative bg-emerald-100 rounded-lg p-3 border border-emerald-200 mb-2">
@@ -673,14 +677,20 @@ function AccommodationBox({
           </div>
           <div className="flex space-x-1">
             {onEdit && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={onEdit}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
+              <AccommodationEditDialog
+                accommodation={accommodation}
+                onSave={onEdit}
+                startDate={startDate}
+                trigger={
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                }
+              />
             )}
             {onRemove && (
               <Button
@@ -757,6 +767,14 @@ export default function TravelDayCard({
     return city;
   };
 
+  const getAccommodationType = (day: number, accommodation: AccommodationDetails): 'checkin' | 'checkout' | 'full' => {
+    if (!accommodation.startDay || !accommodation.endDay) return 'full';
+    if (accommodation.startDay === day) return 'checkin';
+    if (accommodation.endDay === day) return 'checkout';
+    if (day > accommodation.startDay && day < accommodation.endDay) return 'full';
+    return 'full';
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -799,15 +817,11 @@ export default function TravelDayCard({
                 details={accommodation.details}
                 checkInTime={accommodation.checkInTime}
                 checkOutTime={accommodation.checkOutTime}
-                type={
-                  accommodation.startDay === day
-                    ? "checkin"
-                    : accommodation.endDay === day
-                    ? "checkout"
-                    : "full"
-                }
-                onEdit={onEditAccommodation ? () => onEditAccommodation(accommodation) : undefined}
+                type={getAccommodationType(day, accommodation)}
+                onEdit={onEditAccommodation}
                 onRemove={onRemoveAccommodation}
+                accommodation={accommodation}
+                startDate={startDate}
               />
             )}
           </div>
@@ -947,9 +961,8 @@ export default function TravelDayCard({
                       >
                         <div className="relative z-10 flex-1">
                           <div className="flex items-center space-x-2">
-                            <span className="text-gray-500 text-sm">
-                              {suggestedTime} - {suggestedEndTime}
-                            </span>
+                            <span className="text-gray-500 text-sm">                            {suggestedTime} - {suggestedEndTime}
+                          </span>
                             <span className="text-gray-700">{activity.title}</span>
                           </div>
                           {activity.description && (
