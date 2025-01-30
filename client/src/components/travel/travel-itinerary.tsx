@@ -98,10 +98,13 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
           const updatedTransports = [...currentTransport];
           updatedTransports[existingIndex] = updatedTransportation;
           newItinerary[dayIndex].transportation = updatedTransports;
+        } else {
+          // If not found, it might be a new entry, so add it
+          newItinerary[dayIndex].transportation = [...currentTransport, updatedTransportation];
         }
       } else {
-        // If it's a single transportation, update it directly
-        newItinerary[dayIndex].transportation = updatedTransportation;
+        // If it's a single transportation, convert to array and update/add
+        newItinerary[dayIndex].transportation = [updatedTransportation];
       }
 
       return newItinerary;

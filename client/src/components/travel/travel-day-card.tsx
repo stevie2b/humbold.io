@@ -609,11 +609,36 @@ export default function TravelDayCard({
   };
 
 
-  const isWithinStay = accommodation
+  const isWithinStay = accommodation?.startDay && accommodation?.endDay
     ? (day >= accommodation.startDay && day <= accommodation.endDay)
     : false;
-  const isCheckInDay = accommodation ? day === accommodation.startDay : false;
-  const isCheckOutDay = accommodation ? day === accommodation.endDay : false;
+  const isCheckInDay = accommodation?.startDay === day;
+  const isCheckOutDay = accommodation?.endDay === day;
+  const isMiddleDay = isWithinStay && !isCheckInDay && !isCheckOutDay;
+
+  const getAccommodationColorClass = (hour: number): string => {
+    if (!isWithinStay || !accommodation) return '';
+
+    if (isCheckInDay) {
+      const checkInHour = accommodation.checkInTime
+        ? parseInt(accommodation.checkInTime.split(':')[0])
+        : 14;
+      return hour >= checkInHour ? 'bg-emerald-200/50' : '';
+    }
+
+    if (isMiddleDay) {
+      return 'bg-emerald-200/50';
+    }
+
+    if (isCheckOutDay) {
+      const checkOutHour = accommodation.checkOutTime
+        ? parseInt(accommodation.checkOutTime.split(':')[0])
+        : 11;
+      return hour < checkOutHour ? 'bg-emerald-200/50' : '';
+    }
+
+    return '';
+  };
 
   const accomHours = isWithinStay && accommodation ?
     (isCheckInDay ?
@@ -693,14 +718,19 @@ export default function TravelDayCard({
                   <div className="text-emerald-700 font-medium mb-1">{accommodation.title}</div>
                   <div className="text-sm text-emerald-600">
                     {accommodation.details}
-                    {accommodation.checkInTime && (
+                    {isCheckInDay && accommodation.checkInTime && (
                       <div className="mt-1">
                         <span className="font-medium">Check-in:</span> {accommodation.checkInTime}
                       </div>
                     )}
-                    {accommodation.checkOutTime && (
+                    {isCheckOutDay && accommodation.checkOutTime && (
                       <div>
                         <span className="font-medium">Check-out:</span> {accommodation.checkOutTime}
+                      </div>
+                    )}
+                    {isMiddleDay && (
+                      <div className="mt-1">
+                        <span className="italic">Continued stay</span>
                       </div>
                     )}
                   </div>
@@ -709,11 +739,7 @@ export default function TravelDayCard({
                   {Array.from({ length: 24 }, (_, i) => (
                     <div
                       key={i}
-                      className={`flex-1 ${
-                        accommodation.checkInTime && i >= parseInt(accommodation.checkInTime.split(':')[0])
-                          ? 'bg-emerald-200/50'
-                          : ''
-                      }`}
+                      className={`flex-1 ${getAccommodationColorClass(i)}`}
                     />
                   ))}
                 </div>
