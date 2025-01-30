@@ -736,7 +736,6 @@ export default function TravelDayCard({
   // Extract city information from accommodation
   const getCurrentLocation = () => {
     if (!accommodation) return "";
-
     const city = accommodation.title.split(',')[0];
     return city;
   };
@@ -791,15 +790,15 @@ export default function TravelDayCard({
               )}
 
               {/* Handle middle days */}
-              {accommodation.startDay && accommodation.endDay && 
-               day > accommodation.startDay && day < accommodation.endDay && (
-                <AccommodationBox
-                  title={accommodation.title}
-                  details={accommodation.details}
-                  type="full"
-                  onEdit={onEditAccommodation ? () => onEditAccommodation(accommodation) : undefined}
-                />
-              )}
+              {accommodation.startDay && accommodation.endDay &&
+                day > accommodation.startDay && day < accommodation.endDay && (
+                  <AccommodationBox
+                    title={accommodation.title}
+                    details={accommodation.details}
+                    type="full"
+                    onEdit={onEditAccommodation ? () => onEditAccommodation(accommodation) : undefined}
+                  />
+                )}
             </div>
           )}
 
@@ -945,7 +944,8 @@ export default function TravelDayCard({
                           </div>
                           {activity.description && (
                             <p className="text-sm text-gray-500 mt-1">{activity.description}</p>
-                          )}                        </div>
+                          )}
+                        </div>
                         {onAddActivity && (
                           <Button
                             variant="ghost"
@@ -963,7 +963,7 @@ export default function TravelDayCard({
                       </div>
                     );
                   }
-                                    return null;
+                  return null;
                 })}
               </div>
             </div>
