@@ -13,9 +13,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format } from "date-fns";
+import { format, addDays, differenceInDays } from "date-fns";
 import React from 'react';
 import { LocationSearch } from "./location-search";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+
 
 // Utility functions
 const calculateEndTime = (startTime: string, duration: string): string => {
@@ -222,13 +227,37 @@ function ActivityEditDialog({
 function AccommodationEditDialog({
   accommodation,
   onSave,
-  trigger
+  trigger,
+  startDate
 }: {
   accommodation: AccommodationDetails;
   onSave: (updatedAccommodation: AccommodationDetails) => void;
   trigger: React.ReactNode;
+  startDate: Date;
 }) {
   const [edited, setEdited] = useState(accommodation);
+  const [stayStartDate, setStayStartDate] = useState<Date | undefined>(
+    accommodation.startDay ? addDays(startDate, accommodation.startDay - 1) : undefined
+  );
+  const [stayEndDate, setStayEndDate] = useState<Date | undefined>(
+    accommodation.endDay ? addDays(startDate, accommodation.endDay - 1) : undefined
+  );
+
+  const handleSave = () => {
+    if (!stayStartDate || !stayEndDate) {
+      return;
+    }
+
+    // Convert dates back to day numbers
+    const startDay = differenceInDays(stayStartDate, startDate) + 1;
+    const endDay = differenceInDays(stayEndDate, startDate) + 1;
+
+    onSave({
+      ...edited,
+      startDay,
+      endDay
+    });
+  };
 
   return (
     <Dialog>
@@ -271,11 +300,69 @@ function AccommodationEditDialog({
           </div>
 
           <div className="grid gap-2">
+            <Label>Stay Duration</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Check-in Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "justify-start text-left font-normal",
+                        !stayStartDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {stayStartDate ? format(stayStartDate, "PPP") : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={stayStartDate}
+                      onSelect={setStayStartDate}
+                      disabled={(date) => date < startDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="grid gap-2">
+                <Label>Check-out Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "justify-start text-left font-normal",
+                        !stayEndDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {stayEndDate ? format(stayEndDate, "PPP") : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={stayEndDate}
+                      onSelect={setStayEndDate}
+                      disabled={(date) => date < (stayStartDate || startDate)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-2">
             <Label htmlFor="checkInTime">Check-in Time</Label>
             <Input
               id="checkInTime"
               type="time"
-              value={edited.checkInTime}
+              value={edited.checkInTime || "14:00"}
               onChange={(e) => setEdited({ ...edited, checkInTime: e.target.value })}
             />
           </div>
@@ -284,36 +371,13 @@ function AccommodationEditDialog({
             <Input
               id="checkOutTime"
               type="time"
-              value={edited.checkOutTime}
+              value={edited.checkOutTime || "11:00"}
               onChange={(e) => setEdited({ ...edited, checkOutTime: e.target.value })}
             />
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="startDay">Start Day</Label>
-              <Input
-                id="startDay"
-                type="number"
-                min={1}
-                value={edited.startDay}
-                onChange={(e) => setEdited({ ...edited, startDay: parseInt(e.target.value) })}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="endDay">End Day</Label>
-              <Input
-                id="endDay"
-                type="number"
-                min={1}
-                value={edited.endDay}
-                onChange={(e) => setEdited({ ...edited, endDay: parseInt(e.target.value) })}
-              />
-            </div>
-          </div>
         </div>
         <div className="flex justify-end">
-          <Button onClick={() => onSave(edited)}>Save Changes</Button>
+          <Button onClick={handleSave}>Save Changes</Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -710,6 +774,7 @@ export default function TravelDayCard({
                         <Pencil className="h-4 w-4" />
                       </Button>
                     }
+                    startDate={startDate}
                   />
                 )}
               </div>
@@ -723,14 +788,14 @@ export default function TravelDayCard({
                         <span className="font-medium">Check-in:</span> {accommodation.checkInTime}
                       </div>
                     )}
-                    {isCheckOutDay && accommodation.checkOutTime && (
-                      <div>
-                        <span className="font-medium">Check-out:</span> {accommodation.checkOutTime}
-                      </div>
-                    )}
                     {isMiddleDay && (
                       <div className="mt-1">
                         <span className="italic">Continued stay</span>
+                      </div>
+                    )}
+                    {isCheckOutDay && accommodation.checkOutTime && (
+                      <div className="mt-1">
+                        <span className="font-medium">Check-out:</span> {accommodation.checkOutTime}
                       </div>
                     )}
                   </div>

@@ -75,12 +75,29 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
 
   // Edit handlers
   const handleEditAccommodation = (dayIndex: number, updatedAccommodation: AccommodationDetails) => {
+    if (!updatedAccommodation.startDay || !updatedAccommodation.endDay) {
+      toast({ 
+        title: "Error", 
+        description: "Please select both check-in and check-out dates",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setCurrentItinerary(prev => {
       const newItinerary = [...prev];
-      newItinerary[dayIndex] = {
-        ...newItinerary[dayIndex],
-        accommodation: updatedAccommodation
-      };
+
+      // Apply accommodation to all days in the stay duration
+      for (let i = updatedAccommodation.startDay; i <= updatedAccommodation.endDay; i++) {
+        const dayIdx = i - 1;
+        if (dayIdx < newItinerary.length) {
+          newItinerary[dayIdx] = {
+            ...newItinerary[dayIdx],
+            accommodation: updatedAccommodation
+          };
+        }
+      }
+
       return newItinerary;
     });
     toast({ title: "Success", description: "Accommodation updated successfully" });
