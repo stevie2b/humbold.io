@@ -92,10 +92,15 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
       const currentTransport = newItinerary[dayIndex].transportation;
 
       if (Array.isArray(currentTransport)) {
-        // If it's already an array, update the first transportation entry
-        newItinerary[dayIndex].transportation = [updatedTransportation, ...currentTransport.slice(1)];
+        // If it's already an array, find and update the matching transportation
+        const existingIndex = currentTransport.findIndex(t => t.title === updatedTransportation.title);
+        if (existingIndex !== -1) {
+          const updatedTransports = [...currentTransport];
+          updatedTransports[existingIndex] = updatedTransportation;
+          newItinerary[dayIndex].transportation = updatedTransports;
+        }
       } else {
-        // If it's a single transportation or undefined, set it directly
+        // If it's a single transportation, update it directly
         newItinerary[dayIndex].transportation = updatedTransportation;
       }
 
@@ -125,30 +130,9 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
   const handleAddActivity = (dayIndex: number, newActivity: ActivityItem) => {
     setCurrentItinerary(prev => {
       const newItinerary = [...prev];
-      const exists = newActivity.category !== 'custom' &&
-        newItinerary[dayIndex].activities.some(
-          activity => activity.title === newActivity.title
-        );
-
-      if (!exists) {
-        const lastActivityTime = newItinerary[dayIndex].activities.length > 0
-          ? newItinerary[dayIndex].activities.reduce((latest, activity) => {
-              const [hours, minutes] = activity.time.split(':').map(Number);
-              const [durationHours = 0, durationMinutes = 0] = (activity.duration || '00:00').split(':').map(Number);
-              const endTime = hours * 60 + minutes + durationHours * 60 + durationMinutes;
-              return Math.max(latest, endTime);
-            }, 0)
-          : 14 * 60;
-
-        const suggestedStartTime = lastActivityTime + 30;
-        const suggestedHours = Math.floor(suggestedStartTime / 60);
-        const suggestedMinutes = suggestedStartTime % 60;
-
-        newItinerary[dayIndex].activities.push({
-          ...newActivity,
-          time: `${suggestedHours.toString().padStart(2, '0')}:${suggestedMinutes.toString().padStart(2, '0')}`,
-          duration: "02:00"
-        });
+      if (!newActivity.category || newActivity.category === 'custom' || 
+          !newItinerary[dayIndex].activities.some(activity => activity.title === newActivity.title)) {
+        newItinerary[dayIndex].activities.push(newActivity);
         toast({ title: "Success", description: "Activity added successfully" });
       } else {
         toast({
@@ -162,23 +146,23 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
   };
 
   const handleAddTransportation = (dayIndex: number) => {
+    const timestamp = Date.now();
     setCurrentItinerary(prev => {
       const newItinerary = [...prev];
       const newTransportation = {
-        title: "New Transportation",
+        title: `New Transportation ${timestamp}`,
         details: "",
         type: "continuous" as const
       };
 
       if (newItinerary[dayIndex].transportation) {
-        // If transportation exists, convert to array if needed
         newItinerary[dayIndex].transportation = Array.isArray(newItinerary[dayIndex].transportation)
           ? [...newItinerary[dayIndex].transportation, newTransportation]
           : [newItinerary[dayIndex].transportation, newTransportation];
       } else {
-        // If no transportation exists, create new array with single entry
         newItinerary[dayIndex].transportation = [newTransportation];
       }
+
       return newItinerary;
     });
     toast({ title: "Success", description: "New transportation added" });
@@ -215,19 +199,19 @@ export default function TravelItinerary({ itinerary }: { itinerary: DayPlan[] })
           }
         });
       } else if (day.transportation.route) {
-          locations.push({
-            title: `${day.transportation.title} (Departure)`,
-            coordinates: day.transportation.route.from,
-            type: 'transportation' as const,
-            day: day.day
-          });
-          locations.push({
-            title: `${day.transportation.title} (Arrival)`,
-            coordinates: day.transportation.route.to,
-            type: 'transportation' as const,
-            day: day.day
-          });
-        }
+        locations.push({
+          title: `${day.transportation.title} (Departure)`,
+          coordinates: day.transportation.route.from,
+          type: 'transportation' as const,
+          day: day.day
+        });
+        locations.push({
+          title: `${day.transportation.title} (Arrival)`,
+          coordinates: day.transportation.route.to,
+          type: 'transportation' as const,
+          day: day.day
+        });
+      }
     }
 
 
