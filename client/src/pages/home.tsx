@@ -16,10 +16,10 @@ export default function Home() {
           transition={{ duration: 0.5 }}
         >
           <h1 className="text-4xl md:text-5xl font-bold text-center mb-4 bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text">
-            humbold
+            humbold.io
           </h1>
           <p className="text-center text-gray-600 mb-8">
-            Let's plan your perfect trip together! Answer a few questions and get personalized recommendations.
+            Let's plan your next trip together and experience an unforgettable adventure.
           </p>
         </motion.div>
 
