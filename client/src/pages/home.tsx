@@ -4,7 +4,7 @@ import Questionnaire from "@/components/travel/questionnaire";
 
 export default function Home() {
   useEffect(() => {
-    document.title = "AI Travel Planner";
+    document.title = "humbold";
   }, []);
 
   return (
@@ -16,13 +16,13 @@ export default function Home() {
           transition={{ duration: 0.5 }}
         >
           <h1 className="text-4xl md:text-5xl font-bold text-center mb-4 bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text">
-            AI Travel Planner
+            humbold
           </h1>
           <p className="text-center text-gray-600 mb-8">
             Let's plan your perfect trip together! Answer a few questions and get personalized recommendations.
           </p>
         </motion.div>
-        
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

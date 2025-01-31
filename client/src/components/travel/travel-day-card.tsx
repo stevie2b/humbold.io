@@ -251,17 +251,20 @@ function AccommodationEditDialog({
       return;
     }
 
-    const startDay = differenceInDays(stayStartDate, startDate) + 1;
-    const endDay = differenceInDays(stayEndDate, startDate) + 1;
+    const newStartDay = differenceInDays(stayStartDate, startDate) + 1;
+    const newEndDay = differenceInDays(stayEndDate, startDate) + 1;
 
-    onSave({
+    const updatedAccommodation = {
       ...edited,
-      startDay,
-      endDay,
-      checkInTime: edited.checkInTime || "14:00",
-      checkOutTime: edited.checkOutTime || "11:00"
-    });
+      startDay: newStartDay,
+      endDay: newEndDay,
+      checkInTime: newStartDay === accommodation.startDay ? edited.checkInTime || "14:00" : accommodation.checkInTime,
+      checkOutTime: newEndDay === accommodation.endDay ? edited.checkOutTime || "11:00" : accommodation.checkOutTime
+    };
+
+    onSave(updatedAccommodation);
   };
+
 
   return (
     <Dialog>
